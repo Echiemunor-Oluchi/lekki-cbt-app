@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // Configure this to your server URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://cbt-server-iwk9.onrender.com/api';
 
 // ═══════════════════════════════════════════════════════════════════
 // Helper function for API requests
