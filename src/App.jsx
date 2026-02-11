@@ -11,7 +11,7 @@ const JUNIOR_COLLEGE_YEARS = [7, 8, 9];
 const SENIOR_COLLEGE_YEARS = [10, 11, 12];
 const SENIOR_TRACKS = ["Science", "Commercial", "Arts"];
 
-const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba"];
+const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History"];
 const SENIOR_SUBJECTS = {
   Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science"],
   Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government"],
