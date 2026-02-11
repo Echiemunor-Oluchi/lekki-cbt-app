@@ -20,12 +20,12 @@ const SENIOR_SUBJECTS = {
 
 // Updated: Added French for Year 1-4
 const ELEMENTARY_SUBJECTS = {
-  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology"],
-  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology"],
-  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology"],
-  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology"],
-  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology"],
-  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology"]
+  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History"],
+  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History"],
+  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History"],
+  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History"],
+  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History"],
+  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","Histroy"]
 };
 
 const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10 };
