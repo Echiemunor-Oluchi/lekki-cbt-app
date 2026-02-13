@@ -128,7 +128,7 @@ export default function App() {
   const submitRef = useRef(null);
   const timer = useTimer(() => submitRef.current?.());
 
-  // Check server connection and show splash screen
+  // Use this to check the server connection and show the splash screen
   useEffect(() => {
     const initApp = async () => {
       try {
@@ -142,7 +142,7 @@ export default function App() {
     initApp();
   }, []);
 
-  // Load data from MongoDB on mount
+  //This is for Loading all the data from MongoDB on mount
   useEffect(() => {
     const loadData = async () => {
       if (!serverConnected) return;
