@@ -13,7 +13,7 @@ const SENIOR_TRACKS = ["Science", "Commercial", "Arts"];
 
 const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA","ICT"];
 const SENIOR_SUBJECTS = {
-  Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science"],
+  Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science","ICT"],
   Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government"],
   Arts: ["Mathematics", "English", "Literature in English", "Government", "Yoruba", "CRS", "Civic Education", "Marketing", "Economics"]
 };
