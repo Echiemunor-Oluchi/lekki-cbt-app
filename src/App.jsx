@@ -1218,7 +1218,7 @@ function LoginForm({ isAdmin, section, onLogin, C, inputS, btnP }) {
 
  const submit = () => {
   if (isAdmin) {
-    if (pass === "schooladmin@5678") onLogin("Administrator", "admin", "admin");
+    if (pass === "schooladmin@123") onLogin("Administrator", "admin", "admin");
     else setErr("Invalid password");
   } else {
     if (!name.trim() || !pass.trim()) { setErr("Please fill all fields"); return; }
