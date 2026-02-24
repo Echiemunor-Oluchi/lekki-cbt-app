@@ -265,6 +265,12 @@ export async function checkServerHealth() {
   }
 }
 
+// Delete all questions
+export const deleteAllQuestions = async () => {
+  const res = await fetch(`${API_BASE_URL}/questions/all`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete questions");
+  return res.json();
+};
 // Export all APIs as a single object for convenience
 export default {
   questions: questionsAPI,

@@ -11,7 +11,7 @@ const JUNIOR_COLLEGE_YEARS = [7, 8, 9];
 const SENIOR_COLLEGE_YEARS = [10, 11, 12];
 const SENIOR_TRACKS = ["Science", "Commercial", "Arts"];
 
-const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA"];
+const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA","ICT"];
 const SENIOR_SUBJECTS = {
   Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science"],
   Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government"],
@@ -172,9 +172,8 @@ export default function App() {
 
   const notify = (msg, type = "info") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
-  // ═══════════════════════════════════════════════════════════════════
-  // CRUD OPERATIONS - Now using MongoDB API
-  // ═══════════════════════════════════════════════════════════════════
+ 
+  // This is for the CRUD operations
 
   const doSubmit = useCallback(async () => {
     timer.stop();
@@ -227,7 +226,7 @@ export default function App() {
     setLoading(true);
     
     try {
-      // Fetch questions from MongoDB
+      // Fetch questions from MongoDBer
       let qs = await questionsAPI.getFiltered(section, selYear, subject, type, selTrack);
       
       const need = QUESTION_COUNTS[type] || 10;
@@ -595,7 +594,7 @@ export default function App() {
             <h2 style={{ margin: "18px 0 8px", fontSize: 28, color: C.navy }}>{isAdm ? "Admin Access" : "Student Login"}</h2>
             <p style={{ color: C.textSec, fontSize: 18 }}>{isAdm ? "Enter admin credentials" : "Enter your details to begin"}</p>
           </div>
-          <LoginForm isAdmin={isAdm} onLogin={login} C={C} inputS={inputS} btnP={btnP} />
+         <LoginForm isAdmin={isAdm} section={section} onLogin={login} C={C} inputS={inputS} btnP={btnP} />
         </div>
       </div>
     );
@@ -928,6 +927,46 @@ export default function App() {
           {/* Questions Tab */}
           {adminTab === "questions" && (
             <div>
+              {/* Clear All Questions Button */}
+<div style={{ marginBottom: 20, padding: 15, background: "#ffebee", borderRadius: 8, border: "1px solid #f44336" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+    <span style={{ fontWeight: 700, color: "#c62828", fontSize: 18, display: "flex", alignItems: "center", gap: 6 }}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      Danger Zone
+    </span>
+    <button
+      onClick={() => {
+        const pwd = window.prompt("Enter password to delete all questions:");
+        if (pwd === "delete247") {
+          if (window.confirm("Are you sure you want to DELETE ALL QUESTIONS? This cannot be undone!")) {
+            fetch("https://cbt-server-iwk9.onrender.com/api/questions/all", { method: "DELETE" })
+              .then(res => res.json())
+              .then(() => {
+                alert("All questions deleted successfully!");
+                window.location.reload();
+              })
+              .catch(err => alert("Error: " + err.message));
+          }
+        } else if (pwd !== null) {
+          alert("Incorrect password!");
+        }
+      }}
+      style={{ padding: "10px 20px", background: "#f44336", color: "white", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+      Delete All Questions
+    </button>
+  </div>
+</div>
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Question Bank ({bank.length})</h3>
               {bank.length === 0 && <div style={cardS({ textAlign: "center", padding: 36 })}><p style={{ color: C.textSec, fontSize: 18 }}>No questions yet. Use "Add" or "Upload" tab to add questions.</p></div>}
               {[...bank].slice(0, 100).map(q => (
@@ -950,7 +989,7 @@ export default function App() {
               ))}
             </div>
           )}
-
+                   
           {/* Add Question Tab */}
           {adminTab === "add" && (
             <div style={cardS()}>
@@ -963,6 +1002,8 @@ export default function App() {
                     <option value="college">College (Yr 7-12)</option>
                   </select>
                 </div>
+
+              
                 <div>
                   <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Year</label>
                   <select value={newQ.year} onChange={e => setNewQ(p => ({ ...p, year: parseInt(e.target.value), subject: "" }))} style={inputS}>
@@ -1170,33 +1211,38 @@ export default function App() {
   return <div style={pageS}><Toast /><LoadingOverlay /></div>;
 }
 
-function LoginForm({ isAdmin, onLogin, C, inputS, btnP }) {
+function LoginForm({ isAdmin, section, onLogin, C, inputS, btnP }) {
   const [name, setName] = useState("");
-  const [id, setId] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
 
-  const submit = () => {
-    if (isAdmin) {
-      if (pass === "adminpeculiar@1234") onLogin("Administrator", "admin", "admin");
-      else setErr("Invalid password");
-    } else {
-      if (!name.trim() || !id.trim()) { setErr("Please fill all fields"); return; }
-      onLogin(name.trim(), id.trim(), "student");
+ const submit = () => {
+  if (isAdmin) {
+    if (pass === "schooladmin@5678") onLogin("Administrator", "admin", "admin");
+    else setErr("Invalid password");
+  } else {
+    if (!name.trim() || !pass.trim()) { setErr("Please fill all fields"); return; }
+    // Elementary student password
+    if (section === "elementary" && pass === "science2024") {
+      onLogin(name.trim(), name.trim(), "student");
     }
-  };
+    // College student password
+    else if (section === "college" && pass === "startup2024") {
+      onLogin(name.trim(), name.trim(), "student");
+    }
+    else {
+      setErr("Invalid password");
+    }
+  }
+};
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       {!isAdmin && (<>
-        <div>
-          <label style={{ fontSize: 18, fontWeight: 700, display: "block", marginBottom: 8, color: C.textSec }}>Full Name</label>
-          <input value={name} onChange={e => { setName(e.target.value); setErr(""); }} style={inputS} placeholder="Enter your full name" />
-        </div>
-        <div>
-          <label style={{ fontSize: 18, fontWeight: 700, display: "block", marginBottom: 8, color: C.textSec }}>Student ID</label>
-          <input value={id} onChange={e => { setId(e.target.value); setErr(""); }} style={inputS} placeholder="Enter student ID" />
-        </div>
+         <div>
+    <input style={inputS} placeholder="Full Name" value={name} onChange={e => setName(e.target.value)} />
+    <input style={inputS} type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} />
+  </div>
       </>)}
       {isAdmin && (
         <div>
