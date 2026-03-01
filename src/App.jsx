@@ -94,6 +94,92 @@ const C = {
   yellowLight: "#fef9e0",
 };
 
+// ══════════════════════════════════════════════════════
+// PASSWORD MODAL COMPONENT
+// ══════════════════════════════════════════════════════
+function PasswordModal({ isOpen, onClose, onSubmit, subjectName, error, C }) {
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = () => {
+    onSubmit(password);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center",
+      justifyContent: "center", zIndex: 9999, backdropFilter: "blur(4px)"
+    }}>
+      <div style={{
+        background: "white", borderRadius: 20, padding: 35, maxWidth: 450,
+        width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        animation: "slideIn 0.3s ease-out"
+      }}>
+        <h2 style={{ color: C.navy, marginBottom: 15, textAlign: "center", fontSize: 24 }}>
+          🔐 Password Required
+        </h2>
+        <p style={{ color: C.textSec, marginBottom: 20, textAlign: "center", fontSize: 16 }}>
+          Enter password to access <strong style={{ color: C.navy }}>{subjectName}</strong> Test
+        </p>
+        
+        {error && (
+          <div style={{
+            background: C.redLight, color: C.red, padding: 12, borderRadius: 10,
+            marginBottom: 15, textAlign: "center", fontWeight: 600, fontSize: 15
+          }}>
+            {error}
+          </div>
+        )}
+
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Enter test password"
+          autoFocus
+          style={{
+            width: "100%", padding: 15, border: `2px solid ${C.border}`,
+            borderRadius: 10, fontSize: 16, marginBottom: 20, boxSizing: "border-box",
+            outline: "none", transition: "border-color 0.2s"
+          }}
+        />
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1, padding: 12, border: "none", borderRadius: 10,
+              background: "#e0e0e0", color: "#666", fontSize: 16,
+              cursor: "pointer", fontWeight: 600
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            style={{
+              flex: 1, padding: 12, border: "none", borderRadius: 10,
+              background: C.navy, color: "white", fontSize: 16,
+              cursor: "pointer", fontWeight: 600
+            }}
+          >
+            Unlock Test
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState("splash");
   const [section, setSection] = useState(null);
@@ -125,8 +211,262 @@ export default function App() {
   const [filterYear, setFilterYear] = useState("");
   const [filterSubject, setFilterSubject] = useState("");
 
+  // ══════════════════════════════════════════════════════
+  // PASSWORD PROTECTION STATE
+  // ══════════════════════════════════════════════════════
+  const [testPasswords, setTestPasswords] = useState({});
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pendingTest, setPendingTest] = useState(null);
+  const [passwordError, setPasswordError] = useState("");
+
   const submitRef = useRef(null);
   const timer = useTimer(() => submitRef.current?.());
+
+  // Load passwords from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("cbt-test-passwords");
+    if (stored) {
+      try {
+        setTestPasswords(JSON.parse(stored));
+      } catch (e) {
+        console.error("Error loading passwords:", e);
+      }
+    }
+  }, []);
+
+  // Save passwords to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(testPasswords).length > 0) {
+      localStorage.setItem("cbt-test-passwords", JSON.stringify(testPasswords));
+    }
+  }, [testPasswords]);
+
+  // Generate a random 4-5 character password
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const length = Math.random() > 0.5 ? 4 : 5;
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  // Generate passwords for all subjects
+  const generateAllTestPasswords = () => {
+    // Check if passwords already exist
+    const hasExistingPasswords = Object.keys(testPasswords).length > 0;
+    
+    if (hasExistingPasswords) {
+      const confirmed = window.confirm(
+        "⚠️ WARNING: This will replace ALL existing passwords!\n\n" +
+        "Students with old passwords will no longer be able to access tests.\n\n" +
+        "Are you sure you want to generate new passwords?"
+      );
+      
+      if (!confirmed) {
+        return; // User cancelled
+      }
+    }
+    
+    const newPasswords = {};
+    
+    // Elementary subjects
+    ELEMENTARY_YEARS.forEach(year => {
+      (ELEMENTARY_SUBJECTS[year] || []).forEach(subject => {
+        const key = `elementary-${year}-${subject}`;
+        newPasswords[key] = generatePassword();
+      });
+    });
+
+    // Junior college subjects
+    JUNIOR_COLLEGE_YEARS.forEach(year => {
+      JUNIOR_SUBJECTS.forEach(subject => {
+        const key = `college-${year}-${subject}`;
+        newPasswords[key] = generatePassword();
+      });
+    });
+
+    // Senior college subjects
+    SENIOR_COLLEGE_YEARS.forEach(year => {
+      Object.keys(SENIOR_SUBJECTS).forEach(track => {
+        SENIOR_SUBJECTS[track].forEach(subject => {
+          const key = `college-${year}-${track}-${subject}`;
+          newPasswords[key] = generatePassword();
+        });
+      });
+    });
+
+    setTestPasswords(newPasswords);
+    notify("✅ Passwords generated for all subjects!", "success");
+  };
+
+  // Get password key for a subject
+  const getPasswordKey = (section, year, subject, track = null) => {
+    if (section === "elementary") {
+      return `elementary-${year}-${subject}`;
+    } else {
+      if (year >= 10 && track) {
+        return `college-${year}-${track}-${subject}`;
+      } else {
+        return `college-${year}-${subject}`;
+      }
+    }
+  };
+
+  // Handle password verification
+  const handlePasswordSubmit = (enteredPassword) => {
+    if (!pendingTest) return;
+
+    const { subject, type } = pendingTest;
+    const key = getPasswordKey(section, selYear, subject, selTrack);
+    const correctPassword = testPasswords[key];
+
+    if (enteredPassword.trim() === correctPassword) {
+      setShowPasswordModal(false);
+      setPasswordError("");
+      setPendingTest(null);
+      // Proceed with starting the test
+      proceedWithTest(subject, type);
+    } else {
+      setPasswordError("❌ Incorrect password. Please try again or contact your teacher.");
+    }
+  };
+
+  // Modified startExam to check for password if it's a test
+  const startExam = async (subject, type) => {
+    // Only require password for "test" type
+    if (type === "test") {
+      const key = getPasswordKey(section, selYear, subject, selTrack);
+      const hasPassword = testPasswords[key];
+
+      if (!hasPassword) {
+        notify("⚠️ No password has been set for this test yet. Please contact your teacher.", "error");
+        return;
+      }
+
+      // Show password modal
+      setPendingTest({ subject, type });
+      setShowPasswordModal(true);
+      setPasswordError("");
+      return;
+    }
+
+    // For exam and practice, proceed directly
+    proceedWithTest(subject, type);
+  };
+
+  // Proceed with test after password verification (or for exam/practice)
+  const proceedWithTest = async (subject, type) => {
+    setSelSubject(subject);
+    setExamType(type);
+    
+    if (type === "practice") {
+      setQuestions(generateSampleQuestions(subject, QUESTION_COUNTS.practice));
+      setView("exam");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const allQs = await questionsAPI.getAll();
+      let pool = allQs.filter(q => 
+        q.section === section && 
+        q.year === selYear && 
+        q.subject === subject && 
+        q.type === type
+      );
+
+      if (pool.length === 0) {
+        notify(`No ${type} questions available for ${subject}. Contact admin.`, "error");
+        return;
+      }
+
+      const needed = QUESTION_COUNTS[type];
+      if (pool.length < needed) {
+        notify(`Only ${pool.length}/${needed} questions available. Using what we have.`, "info");
+      }
+
+      const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, needed);
+      setQuestions(shuffled);
+      setCurQ(0);
+      setAnswers({});
+      setFlagged(new Set());
+      setResult(null);
+      setView("exam");
+
+      const mins = type === "exam" ? 50 : type === "test" ? 25 : 15;
+      timer.start(mins);
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      notify("Failed to load questions. Please try again.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finishExam = useCallback(async () => {
+    timer.stop();
+    let correct = 0;
+    questions.forEach((q, i) => {
+      if (answers[i] === q.correctAnswer) correct++;
+    });
+    const score = Math.round((correct / questions.length) * 100);
+    const resultData = { 
+      section, 
+      year: selYear, 
+      track: selTrack, 
+      subject: selSubject, 
+      examType, 
+      correct, 
+      total: questions.length, 
+      score,
+      student: { name: user.name, id: user.id }
+    };
+    setResult(resultData);
+    
+    if (serverConnected && examType !== "practice") {
+      try {
+        const savedResult = await resultsAPI.add(resultData);
+        setResults(prev => [savedResult, ...prev]);
+      } catch (error) {
+        console.error('Error saving result:', error);
+        notify("Result couldn't be saved to database, but you can still see it below.", "error");
+      }
+    }
+    
+    setView("result");
+  }, [timer, questions, answers, section, selYear, selTrack, selSubject, examType, user, serverConnected]);
+
+  submitRef.current = finishExam;
+
+  const login = async (name, id, role) => {
+    setUser({ name, id, role });
+    if (role === "admin") {
+      setView("admin");
+    } else {
+      setView("yearSelect");
+    }
+
+    // If student is logging in, create/update student record
+    if (role === "student" && serverConnected) {
+      try {
+        const studentData = {
+          studentId: id,
+          name: name,
+          section: section
+        };
+        await studentsAPI.add(studentData);
+      } catch (error) {
+        console.error('Error adding student:', error);
+      }
+    }
+  };
+
+  const notify = (msg, type = "info") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // Use this to check the server connection and show the splash screen
   useEffect(() => {
@@ -154,149 +494,34 @@ export default function App() {
           resultsAPI.getAll(),
           studentsAPI.getAll()
         ]);
+        
         setBank(questionsData);
         setResults(resultsData);
         setStudents(studentsData);
       } catch (error) {
         console.error('Error loading data:', error);
-        notify('Error connecting to database. Using offline mode.', 'warning');
+        notify("Error loading data from server", "error");
       } finally {
         setLoading(false);
       }
     };
-    
-    if (serverConnected) {
+
+    if (view === "admin" || view === "yearSelect") {
       loadData();
     }
-  }, [serverConnected]);
+  }, [view, serverConnected]);
 
-  const notify = (msg, type = "info") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
-
- 
-  // This is for the CRUD operations
-
-  const doSubmit = useCallback(async () => {
-    timer.stop();
-    let correct = 0;
-    const details = questions.map((q, i) => {
-      const ua = answers[i];
-      const ok = ua === q.correctAnswer;
-      if (ok) correct++;
-      return { question: q.question, userAnswer: ua, correctAnswer: q.correctAnswer, options: q.options, isCorrect: ok };
-    });
-    const score = questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0;
-    const res = { 
-      student: user, 
-      section, 
-      year: selYear, 
-      track: selTrack, 
-      subject: selSubject, 
-      examType, 
-      score, 
-      correct, 
-      total: questions.length, 
-      details, 
-      ts: new Date().toISOString() 
-    };
-    
-    setResult(res);
-    
-    if (examType !== "practice") {
-      try {
-        // Save to MongoDB
-        const savedResult = await resultsAPI.save(res);
-        setResults(prev => [savedResult, ...prev]);
-      } catch (error) {
-        console.error('Error saving result:', error);
-        notify('Result saved locally. Will sync when online.', 'warning');
-        // Still update local state
-        setResults(prev => [res, ...prev]);
-      }
+  const addQ = async () => {
+    if (!newQ.question.trim() || newQ.options.some(o => !o.trim()) || !newQ.subject.trim()) {
+      notify("Please fill all fields", "error");
+      return;
     }
-    
-    setView("result");
-    notify(score >= 50 ? "Well done! 🎉" : "Keep studying, you'll improve!", score >= 50 ? "success" : "info");
-  }, [questions, answers, user, section, selYear, selTrack, selSubject, examType]);
 
-  submitRef.current = doSubmit;
-
-  const startExam = async (subject, type) => {
-    setSelSubject(subject);
-    setExamType(type);
-    setLoading(true);
-    
     try {
-      // Fetch questions from MongoDBer
-      let qs = await questionsAPI.getFiltered(section, selYear, subject, type, selTrack);
-      
-      const need = QUESTION_COUNTS[type] || 10;
-      
-      if (qs.length === 0 && type !== "practice") { 
-        notify("No questions available yet. Try Practice mode or upload questions via Admin.", "warning"); 
-        setLoading(false);
-        return; 
-      }
-      
-      if (qs.length < need && type === "practice") {
-        qs = generateSampleQuestions(subject, need);
-      } else {
-        qs = [...qs].sort(() => Math.random() - 0.5).slice(0, need);
-      }
-      
-      setQuestions(qs);
-      setCurQ(0);
-      setAnswers({});
-      setFlagged(new Set());
-      setResult(null);
-      setView("exam");
-      timer.start(type === "exam" ? 60 : type === "test" ? 30 : 15);
-    } catch (error) {
-      console.error('Error loading questions:', error);
-      notify('Error loading questions. Please try again.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = () => {
-    setUser(null); setSection(null); setSelYear(null); setSelTrack(null);
-    setSelSubject(null); setExamType(null); setQuestions([]); setResult(null);
-    setView("home");
-  };
-
-  const login = async (name, id, role) => {
-    const u = { name, id, role };
-    setUser(u);
-    
-    if (role === "admin") { 
-      setView("admin"); 
-    } else {
-      setView("yearSelect");
-      
-      // Register/update student in MongoDB
-      try {
-        await studentsAPI.login({ ...u, section });
-        // Refresh students list
-        const updatedStudents = await studentsAPI.getAll();
-        setStudents(updatedStudents);
-      } catch (error) {
-        console.error('Error registering student:', error);
-      }
-    }
-    notify(`Welcome, ${name}!`, "success");
-  };
-
-  const addQuestion = async () => {
-    if (!newQ.question.trim() || newQ.options.some(o => !o.trim()) || !newQ.subject) { 
-      notify("Please fill all fields", "error"); 
-      return; 
-    }
-    
-    setLoading(true);
-    try {
+      setLoading(true);
       const questionData = {
-        question: newQ.question,
-        options: newQ.options,
+        question: newQ.question.trim(),
+        options: newQ.options.map(o => o.trim()),
         correctAnswer: newQ.correctAnswer,
         section: newQ.section,
         year: newQ.year,
@@ -398,155 +623,123 @@ export default function App() {
   const inputS = { width: "100%", padding: "16px 18px", borderRadius: "12px", border: `2px solid ${C.border}`, background: "#fff", color: C.text, fontSize: "18px", boxSizing: "border-box", outline: "none", transition: "border-color 0.2s" };
   const btnP = { padding: "16px 28px", borderRadius: "12px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "18px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "10px", transition: "all 0.15s", background: C.navy, color: "#fff" };
   const btnSec = { ...btnP, background: C.accentLight, color: C.navy };
-  const btnOut = { ...btnP, background: "transparent", color: C.text, border: `2px solid ${C.border}` };
-  const btnDanger = { ...btnP, background: C.red, color: "#fff" };
-  const btnGreen = { ...btnP, background: C.green, color: "#fff" };
-  const cardS = (extra = {}) => ({ background: C.card, border: `1px solid ${C.border}`, borderRadius: "16px", padding: "22px", transition: "all 0.2s", ...extra });
+  const btnOut = { ...btnP, background: "transparent", border: `3px solid ${C.border}`, color: C.navy };
+  const cardS = (extra = {}) => ({ background: C.card, borderRadius: "18px", padding: "24px", border: `2px solid ${C.border}`, boxShadow: "0 2px 8px rgba(26,34,96,0.04)", ...extra });
 
-  const Logo = ({ type, size = 80 }) => (
-    <img src={type === "college" ? COLLEGE_LOGO : ELEM_LOGO} alt={type === "college" ? "Lekki Peculiar College" : "Lekki Peculiar School"}
-      style={{ width: size, height: size, objectFit: "contain", borderRadius: 12 }} />
-  );
+  const filteredResults = getFilteredResults();
 
-  const Toast = () => toast ? (
-    <div style={{
-      position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", zIndex: 9999,
-      padding: "16px 32px", borderRadius: "14px", fontWeight: 700, fontSize: "18px",
-      background: toast.type === "success" ? C.green : toast.type === "error" ? C.red : toast.type === "warning" ? "#e8a308" : C.navy,
-      color: "#fff", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", animation: "fadeSlide 0.3s ease",
-      maxWidth: "90vw", textAlign: "center"
-    }}>{toast.msg}
-      <style>{`@keyframes fadeSlide{from{opacity:0;transform:translateX(-50%) translateY(-14px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
-    </div>
-  ) : null;
+  function Logo({ type, size = 60 }) {
+    return <img src={type === "college" ? COLLEGE_LOGO : ELEM_LOGO} alt="Logo" style={{ width: size, height: size, borderRadius: 12, objectFit: "contain" }} />;
+  }
 
-  const LoadingOverlay = () => loading ? (
-    <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
-      background: "rgba(255,255,255,0.8)", zIndex: 9998,
-      display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column"
-    }}>
-      <div style={{ 
-        width: 50, height: 50, border: `5px solid ${C.border}`, 
-        borderTopColor: C.navy, borderRadius: "50%",
-        animation: "spin 1s linear infinite"
-      }} />
-      <p style={{ marginTop: 16, color: C.navy, fontWeight: 700, fontSize: "20px" }}>Loading...</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  ) : null;
-
-  const ServerStatus = () => (
-    <div style={{ 
-      position: "fixed", bottom: 20, right: 20, 
-      padding: "10px 16px", borderRadius: 10,
-      background: serverConnected ? C.greenLight : C.redLight,
-      color: serverConnected ? C.green : C.red,
-      fontSize: 14, fontWeight: 700, zIndex: 100,
-      display: "flex", alignItems: "center", gap: 8
-    }}>
-      <div style={{ 
-        width: 10, height: 10, borderRadius: "50%", 
-        background: serverConnected ? C.green : C.red 
-      }} />
-      {serverConnected ? "Connected" : "Offline"}
-    </div>
-  );
-
-  const Header = ({ title, onBack, showLogout = true }) => (
-    <div style={{ background: "#fff", borderBottom: `2px solid ${C.border}`, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 8px rgba(26,34,96,0.04)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        {onBack && <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: C.text, padding: "6px", display: "flex" }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ width: 28, height: 28 }}><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-        </button>}
-        <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800, color: C.navy }}>{title}</h2>
+  function HoverCard({ children, onClick, style = {} }) {
+    const [hover, setHover] = useState(false);
+    return (
+      <div onClick={onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+        style={{ ...cardS(), cursor: "pointer", transform: hover ? "translateY(-4px)" : "none", boxShadow: hover ? "0 8px 20px rgba(26,34,96,0.15)" : "0 2px 8px rgba(26,34,96,0.04)", transition: "all 0.2s", ...style }}>
+        {children}
       </div>
-      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        {user && showLogout && <button onClick={logout} style={{ ...btnOut, padding: "10px 18px", color: C.red, borderColor: C.red + "50", fontSize: 16 }}>
-          Logout
-        </button>}
-      </div>
-    </div>
-  );
+    );
+  }
 
-  const HoverCard = ({ children, onClick, style = {} }) => (
-    <div onClick={onClick}
-      style={{ ...cardS(style), cursor: onClick ? "pointer" : "default" }}
-      onMouseEnter={e => { if (onClick) { e.currentTarget.style.borderColor = C.navy; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(26,34,96,0.08)"; }}}
-      onMouseLeave={e => { if (onClick) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}}>
-      {children}
-    </div>
-  );
+  function Header({ title, onBack, showLogout = true }) {
+    return (
+      <div style={{ background: "#fff", borderBottom: `2px solid ${C.border}`, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {onBack && <button onClick={onBack} style={{ ...btnSec, padding: "12px", fontSize: 24 }}>←</button>}
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.navy }}>{title}</h2>
+        </div>
+        {showLogout && user && (
+          <button onClick={() => { setUser(null); setView("home"); setSection(null); setSelYear(null); setSelTrack(null); timer.stop(); }}
+            style={{ ...btnOut, padding: "10px 18px", fontSize: 16 }}>
+            🚪 Logout
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  function Toast() {
+    if (!toast) return null;
+    const bgMap = { success: C.greenLight, error: C.redLight, info: C.yellowLight };
+    const txtMap = { success: C.green, error: C.red, info: "#8a7200" };
+    return (
+      <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, background: bgMap[toast.type], color: txtMap[toast.type], padding: "16px 24px", borderRadius: 12, fontSize: 16, fontWeight: 700, boxShadow: "0 8px 20px rgba(0,0,0,0.15)", minWidth: 250, maxWidth: 400 }}>
+        {toast.msg}
+      </div>
+    );
+  }
+
+  function LoadingOverlay() {
+    if (!loading) return null;
+    return (
+      <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998 }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 60, height: 60, border: `6px solid ${C.accentLight}`, borderTop: `6px solid ${C.navy}`, borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }} />
+          <p style={{ marginTop: 16, fontSize: 18, fontWeight: 700, color: C.navy }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ══════════════════════════════════════════════════════
-  // SPLASH - Single Big Logo
+  // SPLASH
   // ══════════════════════════════════════════════════════
   if (view === "splash") return (
-    <div style={{ background: `linear-gradient(160deg, ${C.navy} 0%, #262d6e 50%, #1a2260 100%)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", flexDirection: "column" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-      `}</style>
-      <div style={{ textAlign: "center", animation: "fadeUp 0.8s ease" }}>
-        {/* Single Big Logo */}
-        <div style={{ 
-          width: 180, 
-          height: 180, 
-          borderRadius: 30, 
-          background: "rgba(255,255,255,0.15)", 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          margin: "0 auto 30px",
-          animation: "pulse 2s ease-in-out infinite"
-        }}>
-          <img src={ELEM_LOGO} style={{ width: 140, height: 140, objectFit: "contain", borderRadius: 20 }} alt="Lekki Peculiar Schools" />
-        </div>
-        <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.5px" }}>Lekki Peculiar Schools</h1>
-        <p style={{ color: C.yellow, fontSize: 20, margin: "8px 0 0", fontWeight: 700, fontStyle: "italic" }}>Leading by Learning</p>
-        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 20, letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>CBT Platform</p>
-        <div style={{ marginTop: 40, width: 280, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", margin: "40px auto 0" }}>
-          <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.yellow}, ${C.red})`, borderRadius: 3, animation: "loadBar 2.5s ease" }} />
-        </div>
+  <div style={{ background: `linear-gradient(160deg, ${C.navy} 0%, #262d6e 50%, #1a2260 100%)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", flexDirection: "column" }}>
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+      @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
+      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    `}</style>
+    <div style={{ textAlign: "center", animation: "fadeUp 0.8s ease" }}>
+      {/* Single Big Logo */}
+      <div style={{ 
+        width: 180, 
+        height: 180, 
+        borderRadius: 30, 
+        background: "rgba(255,255,255,0.15)", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        margin: "0 auto 30px",
+        animation: "pulse 2s ease-in-out infinite"
+      }}>
+        <img src={ELEM_LOGO} style={{ width: 140, height: 140, objectFit: "contain", borderRadius: 20 }} alt="Lekki Peculiar Schools" />
+      </div>
+      <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.5px" }}>Lekki Peculiar Schools</h1>
+      <p style={{ color: C.yellow, fontSize: 20, margin: "8px 0 0", fontWeight: 700, fontStyle: "italic" }}>Leading by Learning</p>
+      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 20, letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>CBT Platform</p>
+      <div style={{ marginTop: 40, width: 280, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", margin: "40px auto 0" }}>
+        <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.yellow}, ${C.red})`, borderRadius: 3, animation: "loadBar 2.5s ease" }} />
       </div>
     </div>
-  );
-
+  </div>
+);
   // ══════════════════════════════════════════════════════
   // HOME
   // ══════════════════════════════════════════════════════
-  if (view === "home") return (
-    <div style={pageS}>
-      <Toast />
-      <LoadingOverlay />
-      <ServerStatus />
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');`}</style>
-      <div style={{ maxWidth: 540, margin: "0 auto", padding: "20px 20px 50px" }}>
-        {/* Hero */}
-        <div style={{ textAlign: "center", padding: "40px 0 30px" }}>
-          <img src={ELEM_LOGO} style={{ width: 160, height: 160, objectFit: "contain", margin: "0 auto 20px" }} alt="Lekki Peculiar Schools" />
-          <h1 style={{ fontSize: 36, fontWeight: 900, margin: "0 0 6px", color: C.navy }}>Lekki Peculiar Schools</h1>
-          <p style={{ color: C.red, fontSize: 18, fontWeight: 700, fontStyle: "italic", margin: "4px 0 0" }}>Leading by Learning</p>
-          <p style={{ color: C.textSec, fontSize: 18, marginTop: 12 }}>Computer Based Testing Platform</p>
-        </div>
-
-        {/* Connection Warning */}
-        {serverConnected === false && (
-          <div style={{ ...cardS({ background: C.yellowLight, borderColor: C.yellow, marginBottom: 18, padding: 18 }) }}>
-            <p style={{ margin: 0, fontSize: 16, color: "#8a7200", fontWeight: 600 }}>
-              ⚠️ Server not connected. Some features may be limited.
-            </p>
+  if (view === "home") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <div style={{ maxWidth: 540, margin: "0 auto", padding: 24 }}>
+          <div style={{ textAlign: "center", margin: "40px 0" }}>
+            <div style={{ display: "flex", gap: 20, justifyContent: "center", marginBottom: 20 }}>
+              <Logo type="elementary" size={90} />
+              <Logo type="college" size={90} />
+            </div>
+            <h1 style={{ fontSize: 34, fontWeight: 900, color: C.navy, margin: "0 0 10px" }}>{APP_NAME}</h1>
+            <p style={{ fontSize: 20, color: C.textSec }}>Select your section to begin</p>
           </div>
-        )}
 
         {/* Elementary */}
         <HoverCard onClick={() => { setSection("elementary"); setView("login"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
           <Logo type="elementary" size={80} />
           <div>
             <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Lekki Peculiar School</h3>
-            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Elementary — Year 1 to Year 6</p>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Elementary (Year 1–6)</p>
             <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
               {ELEMENTARY_YEARS.map(y => <span key={y} style={{ background: C.yellowLight, color: "#8a7200", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>Year {y}</span>)}
             </div>
@@ -572,11 +765,12 @@ export default function App() {
             <span style={{ fontSize: 28 }}>⚙️</span>
             <span style={{ fontWeight: 800, fontSize: 22, color: C.navy }}>Admin Panel</span>
           </div>
-          <p style={{ margin: "8px 0 0", color: C.textSec, fontSize: 16 }}>Manage questions, view results &amp; students</p>
+          <p style={{ margin: "8px 0 0", color: C.textSec, fontSize: 16 }}>Manage questions, passwords, view results &amp; students</p>
         </HoverCard>
       </div>
     </div>
   );
+}
 
   // ══════════════════════════════════════════════════════
   // LOGIN
@@ -682,7 +876,7 @@ export default function App() {
   }
 
   // ══════════════════════════════════════════════════════
-  // SUBJECT SELECT
+  // SUBJECT SELECT (WITH PASSWORD MODAL)
   // ══════════════════════════════════════════════════════
   if (view === "subjectSelect") {
     const subs = getSubjects();
@@ -691,6 +885,18 @@ export default function App() {
       <div style={pageS}>
         <Toast />
         <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
         <Header title={lbl} onBack={() => {
           if (section === "college" && selYear >= 10) setView("trackSelect");
           else setView("yearSelect");
@@ -703,17 +909,27 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subs.map(sub => {
               const cnt = bank.filter(q => q.section === section && q.year === selYear && q.subject === sub).length;
+              const key = getPasswordKey(section, selYear, sub, selTrack);
+              const hasPassword = testPasswords[key];
+              
               return (
                 <div key={sub} style={cardS({ padding: "20px" })}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                     <div>
                       <h4 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.navy }}>{sub}</h4>
                       <span style={{ fontSize: 14, color: C.textSec }}>{cnt} question{cnt !== 1 ? "s" : ""} in bank</span>
+                      {!hasPassword && (
+                        <div style={{ fontSize: 13, color: C.red, marginTop: 4, fontWeight: 600 }}>
+                          🔒 Test password not set
+                        </div>
+                      )}
                     </div>
                     <span style={{ fontSize: 28 }}>📖</span>
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button onClick={() => startExam(sub, "test")} disabled={loading} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>📋 Test (20Q)</button>
+                    <button onClick={() => startExam(sub, "test")} disabled={loading} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
+                      🔐 Test (20Q)
+                    </button>
                     <button onClick={() => startExam(sub, "exam")} disabled={loading} style={{ ...btnSec, padding: "12px 20px", fontSize: 16 }}>📝 Exam (40Q)</button>
                     <button onClick={() => startExam(sub, "practice")} disabled={loading} style={{ ...btnOut, padding: "12px 20px", fontSize: 16 }}>🎯 Practice</button>
                   </div>
@@ -798,306 +1014,314 @@ export default function App() {
 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28, gap: 12 }}>
               <button onClick={() => setCurQ(Math.max(0, curQ - 1))} disabled={curQ === 0}
-                style={{ ...btnOut, opacity: curQ === 0 ? 0.35 : 1, cursor: curQ === 0 ? "not-allowed" : "pointer", fontSize: 18 }}>← Previous</button>
-              {curQ < questions.length - 1
-                ? <button onClick={() => setCurQ(curQ + 1)} style={{ ...btnP, fontSize: 18 }}>Next →</button>
-                : <button onClick={() => {
-                    if (prog < questions.length) { if (!window.confirm(`You've answered ${prog}/${questions.length}. Submit anyway?`)) return; }
-                    doSubmit();
-                  }} style={{ ...btnGreen, fontSize: 18 }}>✓ Submit</button>}
+                style={{ ...btnSec, flex: 1, opacity: curQ === 0 ? 0.4 : 1 }}>← Previous</button>
+              {curQ < questions.length - 1 ? (
+                <button onClick={() => setCurQ(curQ + 1)} style={{ ...btnP, flex: 1 }}>Next →</button>
+              ) : (
+                <button onClick={finishExam} style={{ ...btnP, flex: 1, background: C.green }}>✓ Submit</button>
+              )}
             </div>
 
-            <div style={{ marginTop: 28 }}>
-              <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Question Navigator</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {questions.map((_, i) => (
-                  <div key={i} onClick={() => setCurQ(i)}
-                    style={{
-                      width: 48, height: 48, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer", fontSize: 16, fontWeight: 800,
-                      background: i === curQ ? C.navy : answers[i] !== undefined ? C.greenLight : flagged.has(i) ? C.yellowLight : "#fff",
-                      color: i === curQ ? "#fff" : answers[i] !== undefined ? C.green : C.text,
-                      border: `2px solid ${i === curQ ? C.navy : answers[i] !== undefined ? C.green + "50" : flagged.has(i) ? C.yellow : C.border}`
-                    }}>{i + 1}</div>
-                ))}
+            {flagged.size > 0 && (
+              <div style={{ ...cardS({ marginTop: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
+                <span style={{ fontSize: 16, color: "#8a7200", fontWeight: 700 }}>🚩 {flagged.size} flagged question{flagged.size !== 1 ? "s" : ""}</span>
               </div>
-              <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 14, color: C.textSec }}>
-                <span>🟢 Answered</span><span>🔵 Current</span><span>🟡 Flagged</span><span>⚪ Unanswered</span>
-              </div>
-            </div>
+            )}
           </>)}
+        </div>
+
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#fff", borderTop: `2px solid ${C.border}`, padding: "12px 20px" }}>
+          <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap" }}>
+            {questions.map((_, i) => {
+              const ans = i in answers;
+              const flag = flagged.has(i);
+              const cur = i === curQ;
+              return (
+                <button key={i} onClick={() => setCurQ(i)}
+                  style={{
+                    width: 40, height: 40, borderRadius: 8, border: "none", cursor: "pointer",
+                    background: cur ? C.navy : ans ? C.green : flag ? C.yellow : C.accentLight,
+                    color: cur || ans ? "#fff" : flag ? "#8a7200" : C.navy,
+                    fontWeight: 700, fontSize: 14
+                  }}>{i + 1}</button>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
   }
 
   // ══════════════════════════════════════════════════════
-  // RESULT - No Review Button
+  // RESULT
   // ══════════════════════════════════════════════════════
   if (view === "result" && result) {
-    const { score, correct, total } = result;
-    const grade = score >= 70 ? "A" : score >= 60 ? "B" : score >= 50 ? "C" : score >= 40 ? "D" : "F";
+    const pass = result.score >= 50;
     return (
       <div style={pageS}>
         <Toast />
-        <Header title="Results" onBack={() => setView("subjectSelect")} />
-        <div style={{ maxWidth: 540, margin: "0 auto", padding: 24 }}>
-          <div style={{ textAlign: "center", padding: "28px 0" }}>
-            <Logo type={section} size={70} />
-            <div style={{ fontSize: 72, margin: "20px 0" }}>{score >= 70 ? "🎉" : score >= 50 ? "👍" : "📚"}</div>
-            <div style={{
-              width: 180, height: 180, borderRadius: "50%", margin: "0 auto 24px",
-              background: `conic-gradient(${score >= 50 ? C.green : C.red} ${score * 3.6}deg, ${C.border} 0deg)`,
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-              <div style={{ width: 150, height: 150, borderRadius: "50%", background: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 42, fontWeight: 900, color: C.navy }}>{score}%</span>
-                <span style={{ fontSize: 20, color: C.textSec, fontWeight: 700 }}>Grade: {grade}</span>
-              </div>
+        <Header title="Exam Results" showLogout={true} />
+        <div style={{ maxWidth: 520, margin: "0 auto", padding: 24 }}>
+          <div style={{ textAlign: "center", marginTop: 24 }}>
+            <div style={{ fontSize: 80, marginBottom: 10 }}>{pass ? "🎉" : "📚"}</div>
+            <h2 style={{ fontSize: 34, fontWeight: 900, color: pass ? C.green : C.red, margin: "0 0 6px" }}>{result.score}%</h2>
+            <p style={{ fontSize: 20, color: C.textSec, margin: "0 0 6px" }}>{result.correct} out of {result.total} correct</p>
+            <div style={{ background: pass ? C.greenLight : C.redLight, color: pass ? C.green : C.red, padding: "12px 24px", borderRadius: 12, display: "inline-block", fontWeight: 800, fontSize: 18, marginTop: 14 }}>
+              {pass ? "PASSED" : "NEEDS IMPROVEMENT"}
             </div>
-            <h2 style={{ margin: "0 0 10px", color: C.navy, fontSize: 32 }}>{score >= 50 ? "Congratulations!" : "Keep Studying!"}</h2>
-            <p style={{ color: C.textSec, fontSize: 20 }}>{correct}/{total} correct • {selSubject} ({examType})</p>
-            {user && <p style={{ color: C.textSec, fontSize: 18, marginTop: 8 }}>Student: {user.name}</p>}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 28 }}>
-            {[["Correct", correct, C.green, C.greenLight], ["Wrong", total - correct, C.red, C.redLight], ["Total", total, C.navy, C.accentLight]].map(([l, v, c, bg]) => (
-              <div key={l} style={cardS({ textAlign: "center", padding: 18, background: bg })}>
-                <div style={{ fontSize: 36, fontWeight: 900, color: c }}>{v}</div>
-                <div style={{ fontSize: 16, color: C.textSec, fontWeight: 600 }}>{l}</div>
-              </div>
-            ))}
+          <div style={{ ...cardS({ marginTop: 28 }) }}>
+            <p style={{ fontSize: 16, color: C.textSec, marginBottom: 8 }}>Subject:</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.navy, margin: "0 0 16px" }}>{result.subject}</p>
+            <p style={{ fontSize: 16, color: C.textSec, marginBottom: 8 }}>Type:</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.navy, margin: "0 0 16px" }}>{result.examType.toUpperCase()}</p>
+            <p style={{ fontSize: 16, color: C.textSec, marginBottom: 8 }}>Year:</p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: C.navy, margin: 0 }}>Year {result.year}{result.track ? ` — ${result.track}` : ""}</p>
           </div>
 
-          {/* REMOVED Review Answers button */}
-          <button onClick={() => setView("subjectSelect")} style={{ ...btnP, width: "100%", justifyContent: "center", fontSize: 20, padding: 18 }}>← Back to Subjects</button>
+          <button onClick={() => { setView("subjectSelect"); setResult(null); }} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 20, padding: 18, fontSize: 20 }}>
+            ← Back to Subjects
+          </button>
+          {examType !== "practice" && (
+            <p style={{ textAlign: "center", marginTop: 16, color: C.textSec, fontSize: 16 }}>
+              {serverConnected ? "✓ Result saved to database" : "⚠️ Result not saved (server offline)"}
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
   // ══════════════════════════════════════════════════════
-  // ADMIN
+  // ADMIN PANEL
   // ══════════════════════════════════════════════════════
   if (view === "admin") {
-    const tabs = [
-      { id: "questions", label: "📋 Questions" },
-      { id: "add", label: "➕ Add" },
-      { id: "upload", label: "📤 Upload" },
-      { id: "results", label: "📊 Results" },
-      { id: "students", label: "👥 Students" },
-    ];
-
-    const getAdminSubjects = () => {
-      if (newQ.section === "elementary") return ELEMENTARY_SUBJECTS[newQ.year] || [];
-      if (newQ.year >= 10 && newQ.track) return SENIOR_SUBJECTS[newQ.track] || [];
-      if (newQ.year >= 7 && newQ.year <= 9) return JUNIOR_SUBJECTS;
-      return [];
-    };
-
-    const filteredResults = getFilteredResults();
-
     return (
       <div style={pageS}>
         <Toast />
         <LoadingOverlay />
-        <ServerStatus />
-        <Header title="Admin Panel" onBack={logout} />
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "16px 20px 50px" }}>
-
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 12, marginBottom: 20 }}>
-            {tabs.map(t => (
-              <button key={t.id} onClick={() => setAdminTab(t.id)} style={{
-                padding: "12px 20px", borderRadius: 12, border: "none", cursor: "pointer",
-                background: adminTab === t.id ? C.navy : "#fff", color: adminTab === t.id ? "#fff" : C.text,
-                fontWeight: 700, fontSize: 16, whiteSpace: "nowrap", border: `2px solid ${adminTab === t.id ? C.navy : C.border}`
-              }}>{t.label}</button>
-            ))}
+        <Header title="Admin Panel" />
+        <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+            <button onClick={() => setAdminTab("questions")} style={{ ...btnP, background: adminTab === "questions" ? C.navy : C.accentLight, color: adminTab === "questions" ? "#fff" : C.navy }}>📚 Questions ({bank.length})</button>
+            <button onClick={() => setAdminTab("results")} style={{ ...btnP, background: adminTab === "results" ? C.navy : C.accentLight, color: adminTab === "results" ? "#fff" : C.navy }}>📊 Results ({results.length})</button>
+            <button onClick={() => setAdminTab("students")} style={{ ...btnP, background: adminTab === "students" ? C.navy : C.accentLight, color: adminTab === "students" ? "#fff" : C.navy }}>👥 Students ({students.length})</button>
+            <button onClick={() => setAdminTab("passwords")} style={{ ...btnP, background: adminTab === "passwords" ? C.navy : C.accentLight, color: adminTab === "passwords" ? "#fff" : C.navy }}>🔐 Test Passwords</button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
-            {[["Questions", bank.length, C.navy, C.accentLight], ["Results", results.length, C.green, C.greenLight], ["Students", students.length, "#b45309", C.yellowLight]].map(([l, v, c, bg]) => (
-              <div key={l} style={cardS({ textAlign: "center", padding: 16, background: bg })}>
-                <div style={{ fontSize: 32, fontWeight: 900, color: c }}>{v}</div>
-                <div style={{ fontSize: 16, color: C.textSec, fontWeight: 600 }}>{l}</div>
+          {/* PASSWORD MANAGEMENT TAB */}
+          {adminTab === "passwords" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>Test Password Management</h3>
+                <button onClick={generateAllTestPasswords} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
+                  🎲 Generate All Passwords
+                </button>
               </div>
-            ))}
-          </div>
+
+              <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
+                <p style={{ margin: 0, color: "#8a7200", fontSize: 16 }}>
+                  ℹ️ <strong>Note:</strong> Passwords are only required for <strong>Test (20Q)</strong>. Exam and Practice are freely accessible.
+                </p>
+              </div>
+
+              {/* Elementary Passwords */}
+              <div style={{ ...cardS({ marginBottom: 24 }) }}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  🎓 Elementary School (Years 1-6)
+                </h4>
+                {ELEMENTARY_YEARS.map(year => {
+                  const yearSubjects = ELEMENTARY_SUBJECTS[year] || [];
+                  return (
+                    <div key={year} style={{ marginBottom: 20 }}>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Year {year}</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                        {yearSubjects.map(subject => {
+                          const key = getPasswordKey("elementary", year, subject);
+                          return (
+                            <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                              <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                                {testPasswords[key] || "—"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Junior College Passwords */}
+              <div style={{ ...cardS({ marginBottom: 24 }) }}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  📘 Junior College (Years 7-9)
+                </h4>
+                {JUNIOR_COLLEGE_YEARS.map(year => (
+                  <div key={year} style={{ marginBottom: 20 }}>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Year {year}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                      {JUNIOR_SUBJECTS.map(subject => {
+                        const key = getPasswordKey("college", year, subject);
+                        return (
+                          <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                            <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                              {testPasswords[key] || "—"}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Senior College Passwords */}
+              <div style={cardS()}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  🎓 Senior College (Years 10-12)
+                </h4>
+                {SENIOR_COLLEGE_YEARS.map(year => (
+                  <div key={year} style={{ marginBottom: 24 }}>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: C.navy, marginBottom: 14 }}>Year {year}</p>
+                    {SENIOR_TRACKS.map(track => {
+                      const trackSubjects = SENIOR_SUBJECTS[track] || [];
+                      return (
+                        <div key={track} style={{ marginBottom: 16 }}>
+                          <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>{track} Department</p>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                            {trackSubjects.map(subject => {
+                              const key = getPasswordKey("college", year, subject, track);
+                              return (
+                                <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                                  <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                                  <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                                    {testPasswords[key] || "—"}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Questions Tab */}
           {adminTab === "questions" && (
             <div>
-              {/* Clear All Questions Button */}
-<div style={{ marginBottom: 20, padding: 15, background: "#ffebee", borderRadius: 8, border: "1px solid #f44336" }}>
-  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-    <span style={{ fontWeight: 700, color: "#c62828", fontSize: 18, display: "flex", alignItems: "center", gap: 6 }}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c62828" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-      Danger Zone
-    </span>
-    <button
-      onClick={() => {
-        const pwd = window.prompt("Enter password to delete all questions:");
-        if (pwd === "delete247") {
-          if (window.confirm("Are you sure you want to DELETE ALL QUESTIONS? This cannot be undone!")) {
-            fetch("https://cbt-server-iwk9.onrender.com/api/questions/all", { method: "DELETE" })
-              .then(res => res.json())
-              .then(() => {
-                alert("All questions deleted successfully!");
-                window.location.reload();
-              })
-              .catch(err => alert("Error: " + err.message));
-          }
-        } else if (pwd !== null) {
-          alert("Incorrect password!");
-        }
-      }}
-      style={{ padding: "10px 20px", background: "#f44336", color: "white", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="3 6 5 6 21 6"></polyline>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        <line x1="10" y1="11" x2="10" y2="17"></line>
-        <line x1="14" y1="11" x2="14" y2="17"></line>
-      </svg>
-      Delete All Questions
-    </button>
-  </div>
-</div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Question Bank ({bank.length})</h3>
-              {bank.length === 0 && <div style={cardS({ textAlign: "center", padding: 36 })}><p style={{ color: C.textSec, fontSize: 18 }}>No questions yet. Use "Add" or "Upload" tab to add questions.</p></div>}
-              {[...bank].slice(0, 100).map(q => (
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Add Question</h3>
+              <div style={cardS({ marginBottom: 24 })}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Section</label>
+                    <select value={newQ.section} onChange={e => setNewQ({ ...newQ, section: e.target.value, year: 1, track: "" })} style={inputS}>
+                      <option value="elementary">Elementary</option>
+                      <option value="college">College</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
+                    <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                    </select>
+                  </div>
+                </div>
+                
+                {newQ.section === "college" && newQ.year >= 10 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Track</label>
+                    <select value={newQ.track} onChange={e => setNewQ({ ...newQ, track: e.target.value })} style={inputS}>
+                      <option value="">Select Track</option>
+                      {SENIOR_TRACKS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                )}
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Subject</label>
+                    <select value={newQ.subject} onChange={e => setNewQ({ ...newQ, subject: e.target.value })} style={inputS}>
+                      <option value="">Select Subject</option>
+                      {(newQ.section === "elementary" ? (ELEMENTARY_SUBJECTS[newQ.year] || []) : newQ.year >= 10 && newQ.track ? (SENIOR_SUBJECTS[newQ.track] || []) : JUNIOR_SUBJECTS).map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Type</label>
+                    <select value={newQ.type} onChange={e => setNewQ({ ...newQ, type: e.target.value })} style={inputS}>
+                      <option value="test">Test</option>
+                      <option value="exam">Exam</option>
+                      <option value="practice">Practice</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Question</label>
+                  <textarea value={newQ.question} onChange={e => setNewQ({ ...newQ, question: e.target.value })} style={{ ...inputS, minHeight: 100, resize: "vertical" }} placeholder="Enter question..." />
+                </div>
+                <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Options (select correct answer)</label>
+                {newQ.options.map((o, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                    <input type="radio" checked={newQ.correctAnswer === i} onChange={() => setNewQ({ ...newQ, correctAnswer: i })} style={{ width: 24, cursor: "pointer" }} />
+                    <input value={o} onChange={e => { const opts = [...newQ.options]; opts[i] = e.target.value; setNewQ({ ...newQ, options: opts }); }} style={{ ...inputS, marginBottom: 0 }} placeholder={`Option ${String.fromCharCode(65 + i)}`} />
+                  </div>
+                ))}
+                <button onClick={addQ} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>+ Add Question</button>
+              </div>
+
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Bulk Upload (JSON)</h3>
+              <div style={cardS({ marginBottom: 24 })}>
+                <p style={{ color: C.textSec, fontSize: 16, marginBottom: 10 }}>Paste JSON array of questions:</p>
+                <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} style={{ ...inputS, minHeight: 200, fontFamily: "monospace", fontSize: 14 }} placeholder='[{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"section":"elementary","year":1,"subject":"Mathematics","type":"test"}]' />
+                <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>📤 Upload JSON</button>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>Question Bank ({bank.length})</h3>
+              </div>
+              {bank.length === 0 && <div style={cardS({ textAlign: "center", padding: 40 })}><p style={{ color: C.textSec, fontSize: 18 }}>No questions yet. Add some above!</p></div>}
+              {bank.map(q => (
                 <div key={q.id} style={{ ...cardS({ marginBottom: 12, padding: "16px 20px" }) }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                        {[q.section, `Yr ${q.year}`, q.subject, q.type, q.track].filter(Boolean).map((tag, i) => (
-                          <span key={i} style={{ background: C.accentLight, color: C.navy, padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700 }}>{tag}</span>
+                      <p style={{ fontWeight: 700, fontSize: 18, margin: "0 0 8px", color: C.navy }}>{q.question}</p>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                        {q.options.map((opt, i) => (
+                          <span key={i} style={{ background: i === q.correctAnswer ? C.greenLight : C.bg, color: i === q.correctAnswer ? C.green : C.text, padding: "4px 10px", borderRadius: 6, fontSize: 14, fontWeight: i === q.correctAnswer ? 700 : 500 }}>
+                            {String.fromCharCode(65 + i)}: {opt}
+                          </span>
                         ))}
                       </div>
-                      <p style={{ fontSize: 16, margin: "0 0 6px", fontWeight: 600 }}>{q.question}</p>
-                      <div style={{ fontSize: 14, color: C.textSec }}>
-                        {q.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`).join("  •  ")} — Answer: {String.fromCharCode(65 + q.correctAnswer)}
-                      </div>
+                      <span style={{ fontSize: 14, color: C.textSec }}>{q.section} • Year {q.year}{q.track ? ` • ${q.track}` : ""} • {q.subject} • {q.type}</span>
                     </div>
-                    <button onClick={() => deleteQ(q.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.red, padding: 8, flexShrink: 0, fontSize: 24 }}>🗑️</button>
+                    <button onClick={() => deleteQ(q.id)} style={{ ...btnOut, padding: "8px 14px", fontSize: 14, alignSelf: "flex-start" }}>🗑 Delete</button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-                   
-          {/* Add Question Tab */}
-          {adminTab === "add" && (
-            <div style={cardS()}>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 20, marginTop: 0, color: C.navy }}>Add New Question</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <div>
-                  <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Section</label>
-                  <select value={newQ.section} onChange={e => setNewQ(p => ({ ...p, section: e.target.value, year: e.target.value === "elementary" ? 1 : 7, subject: "", track: "" }))} style={inputS}>
-                    <option value="elementary">Elementary (Yr 1-6)</option>
-                    <option value="college">College (Yr 7-12)</option>
-                  </select>
-                </div>
 
-              
-                <div>
-                  <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Year</label>
-                  <select value={newQ.year} onChange={e => setNewQ(p => ({ ...p, year: parseInt(e.target.value), subject: "" }))} style={inputS}>
-                    {(newQ.section === "elementary" ? ELEMENTARY_YEARS : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
-                  </select>
-                </div>
-                {newQ.section === "college" && newQ.year >= 10 && (
-                  <div>
-                    <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Department</label>
-                    <select value={newQ.track} onChange={e => setNewQ(p => ({ ...p, track: e.target.value, subject: "" }))} style={inputS}>
-                      <option value="">Select department...</option>
-                      {SENIOR_TRACKS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Subject</label>
-                  <select value={newQ.subject} onChange={e => setNewQ(p => ({ ...p, subject: e.target.value }))} style={inputS}>
-                    <option value="">Select subject...</option>
-                    {getAdminSubjects().map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Type</label>
-                  <select value={newQ.type} onChange={e => setNewQ(p => ({ ...p, type: e.target.value }))} style={inputS}>
-                    <option value="test">Test</option><option value="exam">Exam</option><option value="practice">Practice</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: 16, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 8 }}>Question</label>
-                  <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))} rows={3}
-                    style={{ ...inputS, resize: "vertical" }} placeholder="Type the question..." />
-                </div>
-                {newQ.options.map((opt, i) => (
-                  <div key={i}>
-                    <label style={{ fontSize: 16, fontWeight: 700, color: newQ.correctAnswer === i ? C.green : C.textSec, display: "block", marginBottom: 8 }}>
-                      Option {String.fromCharCode(65 + i)} {newQ.correctAnswer === i && "✓ (Correct Answer)"}
-                    </label>
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <input value={opt} onChange={e => { const o = [...newQ.options]; o[i] = e.target.value; setNewQ(p => ({ ...p, options: o })); }}
-                        style={{ ...inputS, flex: 1, borderColor: newQ.correctAnswer === i ? C.green : C.border }} placeholder={`Option ${String.fromCharCode(65 + i)}...`} />
-                      <button onClick={() => setNewQ(p => ({ ...p, correctAnswer: i }))}
-                        style={{ ...(newQ.correctAnswer === i ? btnGreen : btnOut), padding: "0 20px", fontSize: 24 }}>✓</button>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={addQuestion} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10, padding: 18, fontSize: 18 }}>➕ Add Question</button>
-              </div>
-            </div>
-          )}
-
-          {/* Bulk Upload Tab */}
-          {adminTab === "upload" && (
-            <div>
-              <div style={cardS({ marginBottom: 20 })}>
-                <h3 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 12px", color: C.navy }}>Bulk Upload (JSON)</h3>
-                <p style={{ fontSize: 16, color: C.textSec, margin: "0 0 12px" }}>Paste a JSON array of questions:</p>
-                <pre style={{ background: "#f0f1f5", padding: 16, borderRadius: 12, fontSize: 14, overflow: "auto", lineHeight: 1.6, color: C.text }}>
-{`[
-  {
-    "section": "college",
-    "year": 10,
-    "track": "Science",
-    "subject": "Physics",
-    "type": "test",
-    "question": "What is the SI unit of force?",
-    "options": ["Joule","Newton","Watt","Pascal"],
-    "correctAnswer": 1
-  }
-]`}
-                </pre>
-                <p style={{ fontSize: 14, color: C.textSec, marginTop: 10 }}>
-                  <strong>correctAnswer</strong>: 0=A, 1=B, 2=C, 3=D &nbsp;|&nbsp; <strong>track</strong>: required for Yr 10-12 only
-                </p>
-              </div>
-              <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} rows={10}
-                style={{ ...inputS, fontFamily: "monospace", fontSize: 16, resize: "vertical", marginBottom: 16 }}
-                placeholder="Paste JSON array here..." />
-              <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", padding: 18, fontSize: 18 }}>📤 Upload Questions</button>
-            </div>
-          )}
-
-          {/* Results Tab - REDESIGNED with Filters */}
+          {/* Results Tab */}
           {adminTab === "results" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>Exam Results</h3>
-                {results.length > 0 && <button onClick={clearAllResults} style={{ ...btnDanger, padding: "10px 18px", fontSize: 14 }}>Clear All</button>}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>All Results ({results.length})</h3>
+                {results.length > 0 && (
+                  <button onClick={clearAllResults} style={{ ...btnOut, padding: "10px 18px", fontSize: 16 }}>🗑 Clear All</button>
+                )}
               </div>
 
               {/* Filters */}
-              <div style={cardS({ marginBottom: 20, padding: 20 })}>
-                <h4 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 700, color: C.navy }}>🔍 Filter Results by Class & Subject</h4>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div style={{ ...cardS({ marginBottom: 24 }) }}>
+                <p style={{ fontSize: 18, fontWeight: 700, marginBottom: 14, color: C.navy }}>Filter Results</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
                   <div>
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Section</label>
                     <select 
