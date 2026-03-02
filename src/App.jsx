@@ -20,12 +20,12 @@ const SENIOR_SUBJECTS = {
 
 // Updated: Added French for Year 1-4
 const ELEMENTARY_SUBJECTS = {
-  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE", "ICT"],
-  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE", "ICT"],
-  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History", "CCA", "CRS", "PHE", "ICT"],
-  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE", "ICT"],
-  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "ICT"],
-  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","Histroy", "CCA", "CRS", "PHE", "ICT"]
+  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","Histroy", "CCA", "CRS", "PHE"]
 };
 
 const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10 };
@@ -212,9 +212,8 @@ export default function App() {
   const [filterSubject, setFilterSubject] = useState("");
 
   // ══════════════════════════════════════════════════════
-  // PASSWORD PROTECTION STATE
+  // PASSWORD PROTECTION STATE - FIXED PERMANENT PASSWORDS
   // ══════════════════════════════════════════════════════
-  const [testPasswords, setTestPasswords] = useState({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingTest, setPendingTest] = useState(null);
   const [passwordError, setPasswordError] = useState("");
@@ -222,83 +221,234 @@ export default function App() {
   const submitRef = useRef(null);
   const timer = useTimer(() => submitRef.current?.());
 
-  // Load passwords from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("cbt-test-passwords");
-    if (stored) {
-      try {
-        setTestPasswords(JSON.parse(stored));
-      } catch (e) {
-        console.error("Error loading passwords:", e);
-      }
-    }
-  }, []);
-
-  // Save passwords to localStorage whenever they change
-  useEffect(() => {
-    if (Object.keys(testPasswords).length > 0) {
-      localStorage.setItem("cbt-test-passwords", JSON.stringify(testPasswords));
-    }
-  }, [testPasswords]);
-
-  // Generate a random 4-5 character password
-  const generatePassword = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const length = Math.random() > 0.5 ? 4 : 5;
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
-
-  // Generate passwords for all subjects
-  const generateAllTestPasswords = () => {
-    // Check if passwords already exist
-    const hasExistingPasswords = Object.keys(testPasswords).length > 0;
-    
-    if (hasExistingPasswords) {
-      const confirmed = window.confirm(
-        "⚠️ WARNING: This will replace ALL existing passwords!\n\n" +
-        "Students with old passwords will no longer be able to access tests.\n\n" +
-        "Are you sure you want to generate new passwords?"
-      );
-      
-      if (!confirmed) {
-        return; // User cancelled
-      }
-    }
-    
-    const newPasswords = {};
-    
-    // Elementary subjects
-    ELEMENTARY_YEARS.forEach(year => {
-      (ELEMENTARY_SUBJECTS[year] || []).forEach(subject => {
-        const key = `elementary-${year}-${subject}`;
-        newPasswords[key] = generatePassword();
-      });
-    });
-
-    // Junior college subjects
-    JUNIOR_COLLEGE_YEARS.forEach(year => {
-      JUNIOR_SUBJECTS.forEach(subject => {
-        const key = `college-${year}-${subject}`;
-        newPasswords[key] = generatePassword();
-      });
-    });
-
-    // Senior college subjects
-    SENIOR_COLLEGE_YEARS.forEach(year => {
-      Object.keys(SENIOR_SUBJECTS).forEach(track => {
-        SENIOR_SUBJECTS[track].forEach(subject => {
-          const key = `college-${year}-${track}-${subject}`;
-          newPasswords[key] = generatePassword();
-        });
-      });
-    });
-
-    setTestPasswords(newPasswords);
-    notify("✅ Passwords generated for all subjects!", "success");
+  // FIXED PERMANENT PASSWORDS - These never change
+  const testPasswords = {
+    "elementary-1-English Language": "FWKN8",
+    "elementary-1-Mathematics": "8UW2N",
+    "elementary-1-Basic Science": "VBHZ",
+    "elementary-1-Social Studies": "V6MA",
+    "elementary-1-Verbal Reasoning": "4DZT",
+    "elementary-1-Quantitative Reasoning": "3EZYV",
+    "elementary-1-Handwriting": "T9WWV",
+    "elementary-1-Phonics": "89JZA",
+    "elementary-1-French": "N3R2B",
+    "elementary-1-Basic Technology": "SUX53",
+    "elementary-1-History": "5B78",
+    "elementary-1-CCA": "M53WQ",
+    "elementary-1-CRS": "CUFW",
+    "elementary-1-PHE": "E6N9F",
+    "elementary-2-English Language": "9AUV",
+    "elementary-2-Mathematics": "4KVVG",
+    "elementary-2-Basic Science": "S9PR",
+    "elementary-2-Social Studies": "MTWWR",
+    "elementary-2-Verbal Reasoning": "5VG2",
+    "elementary-2-Quantitative Reasoning": "DAEG3",
+    "elementary-2-Handwriting": "FA6X",
+    "elementary-2-Phonics": "2P4YM",
+    "elementary-2-French": "BKEH",
+    "elementary-2-Basic Technology": "42AEH",
+    "elementary-2-History": "DZS8",
+    "elementary-2-CCA": "FGUK",
+    "elementary-2-CRS": "D9W84",
+    "elementary-2-PHE": "Y2ZY",
+    "elementary-3-English Language": "494F",
+    "elementary-3-Mathematics": "YJF4",
+    "elementary-3-Basic Science": "5XFKC",
+    "elementary-3-Social Studies": "BXRV4",
+    "elementary-3-Verbal Reasoning": "ABH3",
+    "elementary-3-Quantitative Reasoning": "KBBE4",
+    "elementary-3-Computer Studies": "WK7P",
+    "elementary-3-French": "39PM",
+    "elementary-3-Basic Technology": "GKGGW",
+    "elementary-3-History": "E5L6",
+    "elementary-3-CCA": "RT54",
+    "elementary-3-CRS": "G7KH",
+    "elementary-3-PHE": "CYK8",
+    "elementary-4-English Language": "RQR6Y",
+    "elementary-4-Mathematics": "BBBWE",
+    "elementary-4-Basic Science": "7MZYR",
+    "elementary-4-Social Studies": "K3XP",
+    "elementary-4-Verbal Reasoning": "4TGC",
+    "elementary-4-Quantitative Reasoning": "SUMX",
+    "elementary-4-Computer Studies": "8HCA",
+    "elementary-4-French": "TKX6D",
+    "elementary-4-Civic Education": "WUE4",
+    "elementary-4-Basic Technology": "W985Z",
+    "elementary-4-History": "8QDKC",
+    "elementary-4-CCA": "Q9CX",
+    "elementary-4-CRS": "8NQBT",
+    "elementary-4-PHE": "KLNFL",
+    "elementary-5-English Language": "CLFL",
+    "elementary-5-Mathematics": "2UQAA",
+    "elementary-5-Basic Science": "TY4B",
+    "elementary-5-Social Studies": "8HEG",
+    "elementary-5-Verbal Reasoning": "G348",
+    "elementary-5-Quantitative Reasoning": "EVGPU",
+    "elementary-5-Computer Studies": "GQRF",
+    "elementary-5-French": "CXAV",
+    "elementary-5-Civic Education": "D8K8X",
+    "elementary-5-Agricultural Science": "BRTF",
+    "elementary-5-Basic Technology": "MXKMD",
+    "elementary-5-History": "4DPUW",
+    "elementary-5-CCA": "ARY7",
+    "elementary-5-CRS": "Y8LL",
+    "elementary-5-PHE": "8NXS8",
+    "elementary-6-English Language": "DMSF",
+    "elementary-6-Mathematics": "6D48",
+    "elementary-6-Basic Science": "83F3A",
+    "elementary-6-Social Studies": "8UZM6",
+    "elementary-6-Verbal Reasoning": "NUDW6",
+    "elementary-6-Quantitative Reasoning": "NKPU",
+    "elementary-6-Computer Studies": "UPUE2",
+    "elementary-6-French": "LVZMV",
+    "elementary-6-Civic Education": "3C55",
+    "elementary-6-Agricultural Science": "ETCBS",
+    "elementary-6-Basic Technology": "3W9D",
+    "elementary-6-Histroy": "EUV4",
+    "elementary-6-CCA": "VVCNN",
+    "elementary-6-CRS": "C6TV",
+    "elementary-6-PHE": "ZHMR",
+    "college-7-Mathematics": "HUJ7",
+    "college-7-English": "R7VNE",
+    "college-7-Basic Science": "NC79",
+    "college-7-Basic Technology": "C24D",
+    "college-7-Social Studies": "T7Y8",
+    "college-7-Civic Education": "LZYV",
+    "college-7-French": "Y42XJ",
+    "college-7-Computer Studies": "M25U",
+    "college-7-Agricultural Science": "KW2KU",
+    "college-7-Home Economics": "M347",
+    "college-7-CRS": "LVA8X",
+    "college-7-Business Studies": "CTYRW",
+    "college-7-Yoruba": "FNC5",
+    "college-7-History": "MZBCT",
+    "college-7-Music": "CGHA",
+    "college-7-PHE": "UUCBY",
+    "college-7-CCA": "Y8EED",
+    "college-7-ICT": "VBGNZ",
+    "college-7-PVS": "GNWNT",
+    "college-8-Mathematics": "LTJML",
+    "college-8-English": "6EYD",
+    "college-8-Basic Science": "X3A8",
+    "college-8-Basic Technology": "WL4G",
+    "college-8-Social Studies": "MA3K",
+    "college-8-Civic Education": "TAKN",
+    "college-8-French": "UYJ9K",
+    "college-8-Computer Studies": "86BK6",
+    "college-8-Agricultural Science": "VRB5",
+    "college-8-Home Economics": "YGRNZ",
+    "college-8-CRS": "S7EN",
+    "college-8-Business Studies": "BDAJX",
+    "college-8-Yoruba": "GH3GC",
+    "college-8-History": "DPAUD",
+    "college-8-Music": "MB5XP",
+    "college-8-PHE": "N43V",
+    "college-8-CCA": "GVFGA",
+    "college-8-ICT": "8NEK",
+    "college-8-PVS": "WJ8W",
+    "college-9-Mathematics": "W7URE",
+    "college-9-English": "MG3J",
+    "college-9-Basic Science": "R2XE",
+    "college-9-Basic Technology": "ZW4BX",
+    "college-9-Social Studies": "T89XC",
+    "college-9-Civic Education": "7LD2X",
+    "college-9-French": "UTEE",
+    "college-9-Computer Studies": "D3PGA",
+    "college-9-Agricultural Science": "55KW",
+    "college-9-Home Economics": "WHAG",
+    "college-9-CRS": "GXZ3",
+    "college-9-Business Studies": "WWCL",
+    "college-9-Yoruba": "SU7ZE",
+    "college-9-History": "EA5QY",
+    "college-9-Music": "33JE3",
+    "college-9-PHE": "6ZRD",
+    "college-9-CCA": "9P7L7",
+    "college-9-ICT": "9LWA",
+    "college-9-PVS": "NH6MX",
+    "college-10-Science-Mathematics": "JVA3B",
+    "college-10-Science-English": "8HUJS",
+    "college-10-Science-Physics": "KU95E",
+    "college-10-Science-Chemistry": "4ZBE",
+    "college-10-Science-Biology": "JTMS",
+    "college-10-Science-Further Mathematics": "RL8M",
+    "college-10-Science-Computer Studies": "S3AS",
+    "college-10-Science-Civic Education": "GWHE",
+    "college-10-Science-Geography": "Z8GP",
+    "college-10-Science-Agricultural Science": "S3CH6",
+    "college-10-Science-ICT": "DV9E3",
+    "college-10-Commercial-Mathematics": "3FZLB",
+    "college-10-Commercial-English": "PCEZ",
+    "college-10-Commercial-Commerce": "JHUL",
+    "college-10-Commercial-Economics": "NQF6Q",
+    "college-10-Commercial-Accounting": "VDXJ",
+    "college-10-Commercial-Civic Education": "Y377",
+    "college-10-Commercial-Marketing": "YJE7",
+    "college-10-Commercial-Government": "BGHM",
+    "college-10-Arts-Mathematics": "AKXZF",
+    "college-10-Arts-English": "F8ZG",
+    "college-10-Arts-Literature in English": "C8VD",
+    "college-10-Arts-Government": "GVEZV",
+    "college-10-Arts-Yoruba": "SNWW",
+    "college-10-Arts-CRS": "T6KS",
+    "college-10-Arts-Civic Education": "EVFWN",
+    "college-10-Arts-Marketing": "SV9QR",
+    "college-10-Arts-Economics": "WHV9",
+    "college-11-Science-Mathematics": "BNVY",
+    "college-11-Science-English": "NHMP7",
+    "college-11-Science-Physics": "S3LBX",
+    "college-11-Science-Chemistry": "NUUX",
+    "college-11-Science-Biology": "U9GXV",
+    "college-11-Science-Further Mathematics": "7UYV4",
+    "college-11-Science-Computer Studies": "J7BV3",
+    "college-11-Science-Civic Education": "WRTZ",
+    "college-11-Science-Geography": "X5P7F",
+    "college-11-Science-Agricultural Science": "FAL4H",
+    "college-11-Science-ICT": "GDPNQ",
+    "college-11-Commercial-Mathematics": "96RTV",
+    "college-11-Commercial-English": "Y22G",
+    "college-11-Commercial-Commerce": "UZLGL",
+    "college-11-Commercial-Economics": "SY52",
+    "college-11-Commercial-Accounting": "NPTZS",
+    "college-11-Commercial-Civic Education": "GTAS",
+    "college-11-Commercial-Marketing": "8D4T",
+    "college-11-Commercial-Government": "HLBSM",
+    "college-11-Arts-Mathematics": "DSHEE",
+    "college-11-Arts-English": "FGB3",
+    "college-11-Arts-Literature in English": "ZLFD",
+    "college-11-Arts-Government": "NMMZM",
+    "college-11-Arts-Yoruba": "YT9P",
+    "college-11-Arts-CRS": "TVLN",
+    "college-11-Arts-Civic Education": "FVQP",
+    "college-11-Arts-Marketing": "BBM3Z",
+    "college-11-Arts-Economics": "QPXCY",
+    "college-12-Science-Mathematics": "8AKNS",
+    "college-12-Science-English": "WVR2",
+    "college-12-Science-Physics": "ALYYT",
+    "college-12-Science-Chemistry": "ELP6",
+    "college-12-Science-Biology": "7V3J",
+    "college-12-Science-Further Mathematics": "7C5XG",
+    "college-12-Science-Computer Studies": "KYRR2",
+    "college-12-Science-Civic Education": "3NPC",
+    "college-12-Science-Geography": "JRMA",
+    "college-12-Science-Agricultural Science": "8BMXY",
+    "college-12-Science-ICT": "XCXD6",
+    "college-12-Commercial-Mathematics": "KL293",
+    "college-12-Commercial-English": "XS95",
+    "college-12-Commercial-Commerce": "BDMP",
+    "college-12-Commercial-Economics": "D49K",
+    "college-12-Commercial-Accounting": "LVPC2",
+    "college-12-Commercial-Civic Education": "6S5K",
+    "college-12-Commercial-Marketing": "2WXWT",
+    "college-12-Commercial-Government": "Z7T6",
+    "college-12-Arts-Mathematics": "HMB3",
+    "college-12-Arts-English": "37W3",
+    "college-12-Arts-Literature in English": "XJCK",
+    "college-12-Arts-Government": "XVRZ7",
+    "college-12-Arts-Yoruba": "YSZ5",
+    "college-12-Arts-CRS": "FSCJ",
+    "college-12-Arts-Civic Education": "Z5T9",
+    "college-12-Arts-Marketing": "2MKPL",
+    "college-12-Arts-Economics": "F2H4"
   };
 
   // Get password key for a subject
@@ -337,15 +487,7 @@ export default function App() {
   const startExam = async (subject, type) => {
     // Only require password for "test" type
     if (type === "test") {
-      const key = getPasswordKey(section, selYear, subject, selTrack);
-      const hasPassword = testPasswords[key];
-
-      if (!hasPassword) {
-        notify("⚠️ No password has been set for this test yet. Please contact your teacher.", "error");
-        return;
-      }
-
-      // Show password modal
+      // Show password modal (all passwords are hardcoded, so they always exist)
       setPendingTest({ subject, type });
       setShowPasswordModal(true);
       setPasswordError("");
@@ -685,38 +827,29 @@ export default function App() {
   // ══════════════════════════════════════════════════════
   // SPLASH
   // ══════════════════════════════════════════════════════
-  if (view === "splash") return (
-  <div style={{ background: `linear-gradient(160deg, ${C.navy} 0%, #262d6e 50%, #1a2260 100%)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", flexDirection: "column" }}>
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-      @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
-      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    `}</style>
-    <div style={{ textAlign: "center", animation: "fadeUp 0.8s ease" }}>
-      {/* Single Big Logo */}
-      <div style={{ 
-        width: 180, 
-        height: 180, 
-        borderRadius: 30, 
-        background: "rgba(255,255,255,0.15)", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        margin: "0 auto 30px",
-        animation: "pulse 2s ease-in-out infinite"
-      }}>
-        <img src={ELEM_LOGO} style={{ width: 140, height: 140, objectFit: "contain", borderRadius: 20 }} alt="Lekki Peculiar Schools" />
+  if (view === "splash") {
+    return (
+      <div style={{ ...pageS, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 28, marginBottom: 28 }}>
+          <Logo type="elementary" size={110} />
+          <Logo type="college" size={110} />
+        </div>
+        <h1 style={{ fontSize: 38, fontWeight: 900, color: C.navy, marginBottom: 10 }}>{APP_NAME}</h1>
+        <p style={{ fontSize: 22, color: C.textSec, marginBottom: 28 }}>Computer-Based Testing System</p>
+        {serverConnected === false && (
+          <p style={{ color: C.red, fontSize: 18, fontWeight: 600 }}>⚠️ Server disconnected. Results won't be saved.</p>
+        )}
+        {serverConnected && (
+          <p style={{ color: C.green, fontSize: 18, fontWeight: 600 }}>✓ Connected to database</p>
+        )}
+        <div style={{ width: 70, height: 70, border: `8px solid ${C.accentLight}`, borderTop: `8px solid ${C.navy}`, borderRadius: "50%", animation: "spin 1.2s linear infinite", marginTop: 30 }} />
+        <style>
+          {`@keyframes spin { to { transform: rotate(360deg); } }`}
+        </style>
       </div>
-      <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.5px" }}>Lekki Peculiar Schools</h1>
-      <p style={{ color: C.yellow, fontSize: 20, margin: "8px 0 0", fontWeight: 700, fontStyle: "italic" }}>Leading by Learning</p>
-      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 20, letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>CBT Platform</p>
-      <div style={{ marginTop: 40, width: 280, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", margin: "40px auto 0" }}>
-        <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.yellow}, ${C.red})`, borderRadius: 3, animation: "loadBar 2.5s ease" }} />
-      </div>
-    </div>
-  </div>
-);
+    );
+  }
+
   // ══════════════════════════════════════════════════════
   // HOME
   // ══════════════════════════════════════════════════════
@@ -909,8 +1042,6 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subs.map(sub => {
               const cnt = bank.filter(q => q.section === section && q.year === selYear && q.subject === sub).length;
-              const key = getPasswordKey(section, selYear, sub, selTrack);
-              const hasPassword = testPasswords[key];
               
               return (
                 <div key={sub} style={cardS({ padding: "20px" })}>
@@ -918,11 +1049,6 @@ export default function App() {
                     <div>
                       <h4 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.navy }}>{sub}</h4>
                       <span style={{ fontSize: 14, color: C.textSec }}>{cnt} question{cnt !== 1 ? "s" : ""} in bank</span>
-                      {!hasPassword && (
-                        <div style={{ fontSize: 13, color: C.red, marginTop: 4, fontWeight: 600 }}>
-                          🔒 Test password not set
-                        </div>
-                      )}
                     </div>
                     <span style={{ fontSize: 28 }}>📖</span>
                   </div>
@@ -1113,11 +1239,12 @@ export default function App() {
           {/* PASSWORD MANAGEMENT TAB */}
           {adminTab === "passwords" && (
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>Test Password Management</h3>
-                <button onClick={generateAllTestPasswords} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
-                  🎲 Generate All Passwords
-                </button>
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 20, color: C.navy }}>Test Password Management</h3>
+
+              <div style={{ ...cardS({ marginBottom: 20, background: C.greenLight, borderColor: C.green }) }}>
+                <p style={{ margin: 0, color: C.green, fontSize: 16 }}>
+                  ✅ <strong>Fixed Passwords:</strong> Each subject has a permanent unique password that never changes. These passwords are hardcoded and cannot be modified.
+                </p>
               </div>
 
               <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
