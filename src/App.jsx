@@ -717,6 +717,54 @@ export default function App() {
     }
   };
 
+  const bulkDeleteQuestions = async () => {
+    // Filter questions to delete
+    const toDelete = bank.filter(q => {
+      if (q.section !== newQ.section) return false;
+      if (q.year !== newQ.year) return false;
+      if (newQ.track && q.track !== newQ.track) return false;
+      if (newQ.subject && q.subject !== newQ.subject) return false;
+      if (newQ.type && q.type !== newQ.type) return false;
+      return true;
+    });
+
+    if (toDelete.length === 0) {
+      notify("No questions match the selected filters", "error");
+      return;
+    }
+
+    // Confirm deletion
+    const confirmed = window.confirm(
+      `⚠️ WARNING: You are about to delete ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!\n\n` +
+      `Section: ${newQ.section}\n` +
+      `Year: ${newQ.year}\n` +
+      `Subject: ${newQ.subject || "All"}\n` +
+      `Type: ${newQ.type || "All"}\n` +
+      `${newQ.track ? `Track: ${newQ.track}\n` : ""}` +
+      `\nThis action cannot be undone. Continue?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      
+      // Delete each question
+      const deletePromises = toDelete.map(q => questionsAPI.delete(q.id));
+      await Promise.all(deletePromises);
+      
+      // Update local state
+      setBank(prev => prev.filter(q => !toDelete.some(d => d.id === q.id)));
+      
+      notify(`✅ Successfully deleted ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!`, "success");
+    } catch (error) {
+      console.error('Error bulk deleting questions:', error);
+      notify("Error deleting questions. Some may have been deleted.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearAllResults = async () => {
     if (!window.confirm("Clear all results? This cannot be undone.")) return;
     
@@ -827,38 +875,28 @@ export default function App() {
   // ══════════════════════════════════════════════════════
   // SPLASH
   // ══════════════════════════════════════════════════════
-  if (view === "splash") return (
-  <div style={{ background: `linear-gradient(160deg, ${C.navy} 0%, #262d6e 50%, #1a2260 100%)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", flexDirection: "column" }}>
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
-      @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
-      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-    `}</style>
-    <div style={{ textAlign: "center", animation: "fadeUp 0.8s ease" }}>
-      {/* Single Big Logo */}
-      <div style={{ 
-        width: 180, 
-        height: 180, 
-        borderRadius: 30, 
-        background: "rgba(255,255,255,0.15)", 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center",
-        margin: "0 auto 30px",
-        animation: "pulse 2s ease-in-out infinite"
-      }}>
-        <img src={ELEM_LOGO} style={{ width: 140, height: 140, objectFit: "contain", borderRadius: 20 }} alt="Lekki Peculiar Schools" />
+  if (view === "splash") {
+    return (
+      <div style={{ ...pageS, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 28, marginBottom: 28 }}>
+          <Logo type="elementary" size={110} />
+          <Logo type="college" size={110} />
+        </div>
+        <h1 style={{ fontSize: 38, fontWeight: 900, color: C.navy, marginBottom: 10 }}>{APP_NAME}</h1>
+        <p style={{ fontSize: 22, color: C.textSec, marginBottom: 28 }}>Computer-Based Testing System</p>
+        {serverConnected === false && (
+          <p style={{ color: C.red, fontSize: 18, fontWeight: 600 }}>⚠️ Server disconnected. Results won't be saved.</p>
+        )}
+        {serverConnected && (
+          <p style={{ color: C.green, fontSize: 18, fontWeight: 600 }}>✓ Connected to database</p>
+        )}
+        <div style={{ width: 70, height: 70, border: `8px solid ${C.accentLight}`, borderTop: `8px solid ${C.navy}`, borderRadius: "50%", animation: "spin 1.2s linear infinite", marginTop: 30 }} />
+        <style>
+          {`@keyframes spin { to { transform: rotate(360deg); } }`}
+        </style>
       </div>
-      <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.5px" }}>Lekki Peculiar Schools</h1>
-      <p style={{ color: C.yellow, fontSize: 20, margin: "8px 0 0", fontWeight: 700, fontStyle: "italic" }}>Leading by Learning</p>
-      <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 20, letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>CBT Platform</p>
-      <div style={{ marginTop: 40, width: 280, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", margin: "40px auto 0" }}>
-        <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.yellow}, ${C.red})`, borderRadius: 3, animation: "loadBar 2.5s ease" }} />
-      </div>
-    </div>
-  </div>
-);
+    );
+  }
 
   // ══════════════════════════════════════════════════════
   // HOME
@@ -1418,6 +1456,89 @@ export default function App() {
                 <p style={{ color: C.textSec, fontSize: 16, marginBottom: 10 }}>Paste JSON array of questions:</p>
                 <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} style={{ ...inputS, minHeight: 200, fontFamily: "monospace", fontSize: 14 }} placeholder='[{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"section":"elementary","year":1,"subject":"Mathematics","type":"test"}]' />
                 <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>📤 Upload JSON</button>
+              </div>
+
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Bulk Delete Questions</h3>
+              <div style={cardS({ marginBottom: 24, borderLeft: `5px solid ${C.red}` })}>
+                <p style={{ color: C.textSec, fontSize: 16, marginBottom: 16 }}>Delete all questions matching these filters:</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Section</label>
+                    <select value={newQ.section} onChange={e => setNewQ({ ...newQ, section: e.target.value, year: 1, track: "" })} style={inputS}>
+                      <option value="elementary">Elementary</option>
+                      <option value="college">College</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
+                    <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                    </select>
+                  </div>
+                </div>
+                
+                {newQ.section === "college" && newQ.year >= 10 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Track (Optional)</label>
+                    <select value={newQ.track} onChange={e => setNewQ({ ...newQ, track: e.target.value })} style={inputS}>
+                      <option value="">All Tracks</option>
+                      {SENIOR_TRACKS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                )}
+                
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Subject</label>
+                  <select value={newQ.subject} onChange={e => setNewQ({ ...newQ, subject: e.target.value })} style={inputS}>
+                    <option value="">Select Subject</option>
+                    {(newQ.section === "elementary" ? (ELEMENTARY_SUBJECTS[newQ.year] || []) : newQ.year >= 10 && newQ.track ? (SENIOR_SUBJECTS[newQ.track] || []) : JUNIOR_SUBJECTS).map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Type (Optional)</label>
+                  <select value={newQ.type} onChange={e => setNewQ({ ...newQ, type: e.target.value })} style={inputS}>
+                    <option value="">All Types</option>
+                    <option value="test">Test</option>
+                    <option value="exam">Exam</option>
+                    <option value="practice">Practice</option>
+                  </select>
+                </div>
+
+                {(() => {
+                  const matchingCount = bank.filter(q => {
+                    if (q.section !== newQ.section) return false;
+                    if (q.year !== newQ.year) return false;
+                    if (newQ.track && q.track !== newQ.track) return false;
+                    if (newQ.subject && q.subject !== newQ.subject) return false;
+                    if (newQ.type && q.type !== newQ.type) return false;
+                    return true;
+                  }).length;
+
+                  return (
+                    <>
+                      <div style={{ background: C.yellowLight, padding: 12, borderRadius: 8, marginBottom: 14 }}>
+                        <p style={{ margin: 0, color: "#8a7200", fontSize: 15, fontWeight: 700 }}>
+                          {matchingCount} question{matchingCount !== 1 ? "s" : ""} will be deleted
+                        </p>
+                      </div>
+                      <button 
+                        onClick={bulkDeleteQuestions} 
+                        disabled={loading || matchingCount === 0 || !newQ.subject}
+                        style={{ 
+                          ...btnP, 
+                          width: "100%", 
+                          justifyContent: "center", 
+                          background: C.red,
+                          opacity: (loading || matchingCount === 0 || !newQ.subject) ? 0.5 : 1,
+                          cursor: (loading || matchingCount === 0 || !newQ.subject) ? "not-allowed" : "pointer"
+                        }}
+                      >
+                        🗑 Delete {matchingCount} Question{matchingCount !== 1 ? "s" : ""}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
