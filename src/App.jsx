@@ -875,29 +875,38 @@ export default function App() {
   // ══════════════════════════════════════════════════════
   // SPLASH
   // ══════════════════════════════════════════════════════
-  if (view === "splash") {
-    return (
-      <div style={{ ...pageS, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ display: "flex", gap: 28, marginBottom: 28 }}>
-          <Logo type="elementary" size={110} />
-          <Logo type="college" size={110} />
+  if (view === "splash") return (
+    <div style={{ background: `linear-gradient(160deg, ${C.navy} 0%, #262d6e 50%, #1a2260 100%)`, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", flexDirection: "column" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loadBar { 0% { width: 0; } 100% { width: 100%; } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+      `}</style>
+      <div style={{ textAlign: "center", animation: "fadeUp 0.8s ease" }}>
+        {/* Single Big Logo */}
+        <div style={{ 
+          width: 180, 
+          height: 180, 
+          borderRadius: 30, 
+          background: "rgba(255,255,255,0.15)", 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          margin: "0 auto 30px",
+          animation: "pulse 2s ease-in-out infinite"
+        }}>
+          <img src={ELEM_LOGO} style={{ width: 140, height: 140, objectFit: "contain", borderRadius: 20 }} alt="Lekki Peculiar Schools" />
         </div>
-        <h1 style={{ fontSize: 38, fontWeight: 900, color: C.navy, marginBottom: 10 }}>{APP_NAME}</h1>
-        <p style={{ fontSize: 22, color: C.textSec, marginBottom: 28 }}>Computer-Based Testing System</p>
-        {serverConnected === false && (
-          <p style={{ color: C.red, fontSize: 18, fontWeight: 600 }}>⚠️ Server disconnected. Results won't be saved.</p>
-        )}
-        {serverConnected && (
-          <p style={{ color: C.green, fontSize: 18, fontWeight: 600 }}>✓ Connected to database</p>
-        )}
-        <div style={{ width: 70, height: 70, border: `8px solid ${C.accentLight}`, borderTop: `8px solid ${C.navy}`, borderRadius: "50%", animation: "spin 1.2s linear infinite", marginTop: 30 }} />
-        <style>
-          {`@keyframes spin { to { transform: rotate(360deg); } }`}
-        </style>
+        <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, margin: "0 0 8px", letterSpacing: "-0.5px" }}>Lekki Peculiar Schools</h1>
+        <p style={{ color: C.yellow, fontSize: 20, margin: "8px 0 0", fontWeight: 700, fontStyle: "italic" }}>Leading by Learning</p>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 18, marginTop: 20, letterSpacing: 4, textTransform: "uppercase", fontWeight: 700 }}>CBT Platform</p>
+        <div style={{ marginTop: 40, width: 280, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden", margin: "40px auto 0" }}>
+          <div style={{ height: "100%", background: `linear-gradient(90deg, ${C.yellow}, ${C.red})`, borderRadius: 3, animation: "loadBar 2.5s ease" }} />
+        </div>
       </div>
-    );
-  }
-
+    </div>
+  );
   // ══════════════════════════════════════════════════════
   // HOME
   // ══════════════════════════════════════════════════════
