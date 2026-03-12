@@ -20,8 +20,8 @@ const SENIOR_SUBJECTS = {
 
 // Updated: Added French for Year 1-4
 const ELEMENTARY_SUBJECTS = {
-  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
-  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
+  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies"],
+  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies"],
   3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History", "CCA", "CRS", "PHE"],
   4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE"],
   5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE"],
@@ -859,6 +859,7 @@ export default function App() {
       </div>
     );
   }
+  staufklnbcbndkjdidb
 
   function LoadingOverlay() {
     if (!loading) return null;
