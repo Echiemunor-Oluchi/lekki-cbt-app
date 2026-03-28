@@ -554,7 +554,8 @@ export default function App() {
         return;
       }
 
-      const needed = QUESTION_COUNTS[type];
+      // For entrance exams, use 50 questions. For regular exams, use 40
+      const needed = (section === "entrance" && type === "exam") ? 50 : QUESTION_COUNTS[type];
       if (pool.length < needed) {
         notify(`Only ${pool.length}/${needed} questions available. Using what we have.`, "info");
       }
