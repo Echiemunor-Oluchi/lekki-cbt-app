@@ -455,11 +455,11 @@ export default function App() {
     // Common Entrance passwords - Elementary
     "entrance-elementary-Mathematics": "CEELEM-MATH",
     "entrance-elementary-English": "CEELEM-ENG",
-    "entrance-elementary-Science": "CEELEM-SCI",
+    "entrance-elementary-General Knowledge": "CEELEM-GK",
     // Common Entrance passwords - College
     "entrance-college-Mathematics": "CECOLL-MATH",
     "entrance-college-English": "CECOLL-ENG",
-    "entrance-college-Science": "CECOLL-SCI"
+    "entrance-college-General Knowledge": "CECOLL-GK"
   };
 
   // Get password key for a subject
