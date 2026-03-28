@@ -594,7 +594,7 @@ export default function App() {
       correct, 
       total: questions.length, 
       score,
-      student: { name: user.name, id: user.id }
+      student: user ? { name: user.name, id: user.id } : { name: "Anonymous", id: "entrance-student" }
     };
     setResult(resultData);
     
