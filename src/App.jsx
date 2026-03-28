@@ -13,7 +13,7 @@ const SENIOR_TRACKS = ["Science", "Commercial", "Arts"];
 
 const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA","ICT","PVS"];
 const SENIOR_SUBJECTS = {
-  Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science","ICT"],
+  Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science","ICT", "General Knowledge"],
   Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government"],
   Arts: ["Mathematics", "English", "Literature in English", "Government", "Yoruba", "CRS", "Civic Education", "Marketing", "Economics"]
 };
@@ -29,7 +29,7 @@ const ELEMENTARY_SUBJECTS = {
 };
 
 // Common Entrance subjects
-const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "Science"];
+const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "General Knowledge"];
 
 const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 50 };
 
