@@ -28,7 +28,10 @@ const ELEMENTARY_SUBJECTS = {
   6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music"]
 };
 
-const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10 };
+// Common Entrance subjects
+const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "Science"];
+
+const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 50 };
 
 function generateSampleQuestions(subject, count = 10) {
   const templates = [
@@ -124,7 +127,7 @@ function PasswordModal({ isOpen, onClose, onSubmit, subjectName, error, C }) {
         animation: "slideIn 0.3s ease-out"
       }}>
         <h2 style={{ color: C.navy, marginBottom: 15, textAlign: "center", fontSize: 24 }}>
-          🔐 Password Required
+          Password Required
         </h2>
         <p style={{ color: C.textSec, marginBottom: 20, textAlign: "center", fontSize: 16 }}>
           Enter password to access <strong style={{ color: C.navy }}>{subjectName}</strong> Test
@@ -448,11 +451,23 @@ export default function App() {
     "college-12-Arts-CRS": "FSCJ",
     "college-12-Arts-Civic Education": "Z5T9",
     "college-12-Arts-Marketing": "2MKPL",
-    "college-12-Arts-Economics": "F2H4"
+    "college-12-Arts-Economics": "F2H4",
+    // Common Entrance passwords - Elementary
+    "entrance-elementary-Mathematics": "CEELEM-MATH",
+    "entrance-elementary-English": "CEELEM-ENG",
+    "entrance-elementary-Science": "CEELEM-SCI",
+    // Common Entrance passwords - College
+    "entrance-college-Mathematics": "CECOLL-MATH",
+    "entrance-college-English": "CECOLL-ENG",
+    "entrance-college-Science": "CECOLL-SCI"
   };
 
   // Get password key for a subject
   const getPasswordKey = (section, year, subject, track = null) => {
+    if (section === "entrance") {
+      // year will contain 'elementary' or 'college' for entrance exams
+      return `entrance-${year}-${subject}`;
+    }
     if (section === "elementary") {
       return `elementary-${year}-${subject}`;
     } else {
@@ -512,9 +527,24 @@ export default function App() {
     setLoading(true);
     try {
       const allQs = await questionsAPI.getAll();
+      
+      // For entrance exams, map to actual year numbers
+      let filterSection = section;
+      let filterYear = selYear;
+      
+      if (section === "entrance") {
+        if (selYear === "college") {
+          filterSection = "college";
+          filterYear = 12;
+        } else if (selYear === "elementary") {
+          filterSection = "elementary";
+          filterYear = 6;
+        }
+      }
+      
       let pool = allQs.filter(q => 
-        q.section === section && 
-        q.year === selYear && 
+        q.section === filterSection && 
+        q.year === filterYear && 
         q.subject === subject && 
         q.type === type
       );
@@ -537,7 +567,7 @@ export default function App() {
       setResult(null);
       setView("exam");
 
-      const mins = type === "exam" ? 50 : type === "test" ? 25 : 15;
+      const mins = (section === "entrance" && type === "exam") ? 60 : type === "exam" ? 50 : type === "test" ? 25 : 15;
       timer.start(mins);
     } catch (error) {
       console.error('Error loading questions:', error);
@@ -735,7 +765,7 @@ export default function App() {
 
     // Confirm deletion
     const confirmed = window.confirm(
-      `⚠️ WARNING: You are about to delete ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!\n\n` +
+      `WARNING: You are about to delete ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!\n\n` +
       `Section: ${newQ.section}\n` +
       `Year: ${newQ.year}\n` +
       `Subject: ${newQ.subject || "All"}\n` +
@@ -756,7 +786,7 @@ export default function App() {
       // Update local state
       setBank(prev => prev.filter(q => !toDelete.some(d => d.id === q.id)));
       
-      notify(`✅ Successfully deleted ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!`, "success");
+      notify(`Successfully deleted ${toDelete.length} question${toDelete.length !== 1 ? "s" : ""}!`, "success");
     } catch (error) {
       console.error('Error bulk deleting questions:', error);
       notify("Error deleting questions. Some may have been deleted.", "error");
@@ -788,6 +818,7 @@ export default function App() {
   // Get subjects for filter dropdown
   const getFilterSubjects = () => {
     if (!filterSection || !filterYear) return [];
+    if (filterSection === "entrance") return COMMON_ENTRANCE_SUBJECTS;
     const yr = parseInt(filterYear);
     if (filterSection === "elementary") return ELEMENTARY_SUBJECTS[yr] || [];
     if (yr >= 10) {
@@ -802,7 +833,10 @@ export default function App() {
   const getFilteredResults = () => {
     return results.filter(r => {
       if (filterSection && r.section !== filterSection) return false;
-      if (filterYear && r.year !== parseInt(filterYear)) return false;
+      // For entrance, year contains "elementary" or "college"
+      if (filterSection === "entrance" && filterYear && r.year !== filterYear) return false;
+      // For regular sections, year is a number
+      if (filterSection !== "entrance" && filterYear && r.year !== parseInt(filterYear)) return false;
       if (filterSubject && r.subject !== filterSubject) return false;
       return true;
     });
@@ -836,13 +870,13 @@ export default function App() {
     return (
       <div style={{ background: "#fff", borderBottom: `2px solid ${C.border}`, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {onBack && <button onClick={onBack} style={{ ...btnSec, padding: "12px", fontSize: 24 }}>←</button>}
+          {onBack && <button onClick={onBack} style={{ ...btnSec, padding: "12px", fontSize: 16 }}>Back</button>}
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: C.navy }}>{title}</h2>
         </div>
         {showLogout && user && (
           <button onClick={() => { setUser(null); setView("home"); setSection(null); setSelYear(null); setSelTrack(null); timer.stop(); }}
             style={{ ...btnOut, padding: "10px 18px", fontSize: 16 }}>
-            🚪 Logout
+            Logout
           </button>
         )}
       </div>
@@ -917,9 +951,8 @@ export default function App() {
         <Toast />
         <div style={{ maxWidth: 540, margin: "0 auto", padding: 24 }}>
           <div style={{ textAlign: "center", margin: "40px 0" }}>
-            <div style={{ display: "flex", gap: 20, justifyContent: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
               <Logo type="elementary" size={90} />
-              <Logo type="college" size={90} />
             </div>
             <h1 style={{ fontSize: 34, fontWeight: 900, color: C.navy, margin: "0 0 10px" }}>{APP_NAME}</h1>
             <p style={{ fontSize: 20, color: C.textSec }}>Select your section to begin</p>
@@ -950,10 +983,21 @@ export default function App() {
           </div>
         </HoverCard>
 
+        {/* Common Entrance */}
+        <HoverCard onClick={() => { setSection("entrance"); setView("entrance-arm"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
+          <Logo type="elementary" size={80} />
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Common Entrance</h3>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Entrance Examination</p>
+            <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+              {COMMON_ENTRANCE_SUBJECTS.map(s => <span key={s} style={{ background: C.yellowLight, color: "#8a7200", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>{s}</span>)}
+            </div>
+          </div>
+        </HoverCard>
+
         {/* Admin */}
         <HoverCard onClick={() => { setSection("admin"); setView("login"); }} style={{ textAlign: "center", background: C.accentLight, borderColor: C.navy + "20" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-            <span style={{ fontSize: 28 }}>⚙️</span>
             <span style={{ fontWeight: 800, fontSize: 22, color: C.navy }}>Admin Panel</span>
           </div>
           <p style={{ margin: "8px 0 0", color: C.textSec, fontSize: 16 }}>Manage questions, passwords, view results &amp; students</p>
@@ -975,11 +1019,127 @@ export default function App() {
         <Header title={isAdm ? "Admin Login" : section === "elementary" ? "Elementary Login" : "College Login"} onBack={() => setView("home")} showLogout={false} />
         <div style={{ maxWidth: 480, margin: "0 auto", padding: 24 }}>
           <div style={{ textAlign: "center", margin: "30px 0 28px" }}>
-            {isAdm ? <div style={{ fontSize: 64 }}>⚙️</div> : <Logo type={section} size={100} />}
+            {isAdm ? <div style={{ fontSize: 64, fontWeight: 900, color: C.navy }}>ADMIN</div> : <Logo type={section} size={100} />}
             <h2 style={{ margin: "18px 0 8px", fontSize: 28, color: C.navy }}>{isAdm ? "Admin Access" : "Student Login"}</h2>
             <p style={{ color: C.textSec, fontSize: 18 }}>{isAdm ? "Enter admin credentials" : "Enter your details to begin"}</p>
           </div>
          <LoginForm isAdmin={isAdm} section={section} onLogin={login} C={C} inputS={inputS} btnP={btnP} />
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // ENTRANCE ARM SELECT
+  // ══════════════════════════════════════════════════════
+  if (view === "entrance-arm") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <Header title="Common Entrance Examination" onBack={() => setView("home")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <Logo type="elementary" size={50} />
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your arm</p>
+          </div>
+
+          <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
+            <p style={{ margin: 0, color: "#8a7200", fontSize: 16, fontWeight: 600 }}>
+              Each subject has <strong>50 questions</strong> and <strong>60 minutes (1 hour)</strong> to complete
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Elementary Arm */}
+            <HoverCard 
+              onClick={() => { 
+                setSelYear("elementary");
+                setView("entrance-subjects"); 
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
+            >
+              <Logo type="elementary" size={70} />
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Elementary Arm</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English • Science</p>
+              </div>
+            </HoverCard>
+
+            {/* College Arm */}
+            <HoverCard 
+              onClick={() => { 
+                setSelYear("college");
+                setView("entrance-subjects"); 
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
+            >
+              <Logo type="college" size={70} />
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>College Arm</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English • Science</p>
+              </div>
+            </HoverCard>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // ENTRANCE SUBJECTS SELECT
+  // ══════════════════════════════════════════════════════
+  if (view === "entrance-subjects") {
+    const armName = selYear === "elementary" ? "Elementary" : "College";
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
+        <Header title={`Common Entrance - ${armName}`} onBack={() => setView("entrance-arm")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <Logo type={selYear} size={50} />
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select a subject to begin your entrance exam</p>
+          </div>
+
+          <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
+            <p style={{ margin: 0, color: "#8a7200", fontSize: 16, fontWeight: 600 }}>
+              Each subject has <strong>50 questions</strong> and <strong>60 minutes (1 hour)</strong> to complete
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {COMMON_ENTRANCE_SUBJECTS.map(subj => (
+              <HoverCard 
+                key={subj} 
+                onClick={() => {
+                  setSelTrack(null);
+                  setPendingTest({ subject: subj, type: "exam" });
+                  setShowPasswordModal(true);
+                  setPasswordError("");
+                }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
+              >
+                <div>
+                  <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                  <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>50 Questions • 60 Minutes • Password Required</p>
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
+              </HoverCard>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -1040,7 +1200,11 @@ export default function App() {
   // TRACK SELECT
   // ══════════════════════════════════════════════════════
   if (view === "trackSelect") {
-    const info = { Science: { emoji: "🔬", color: "#1e40af", bg: "#dbeafe" }, Commercial: { emoji: "📊", color: "#065f46", bg: "#d1fae5" }, Arts: { emoji: "🎨", color: "#9d174d", bg: "#fce7f3" } };
+    const info = { 
+      Science: { icon: "SCI", color: "#1e40af", bg: "#dbeafe" }, 
+      Commercial: { icon: "COM", color: "#065f46", bg: "#d1fae5" }, 
+      Arts: { icon: "ART", color: "#9d174d", bg: "#fce7f3" } 
+    };
     return (
       <div style={pageS}>
         <Toast />
@@ -1053,7 +1217,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {SENIOR_TRACKS.map(t => (
               <HoverCard key={t} onClick={() => { setSelTrack(t); setView("subjectSelect"); }} style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <div style={{ width: 70, height: 70, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, background: info[t].bg }}>{info[t].emoji}</div>
+                <div style={{ width: 70, height: 70, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, background: info[t].bg, color: info[t].color }}>{info[t].icon}</div>
                 <div>
                   <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: info[t].color }}>{t} Department</h3>
                   <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{(SENIOR_SUBJECTS[t] || []).length} subjects</p>
@@ -1112,9 +1276,9 @@ export default function App() {
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <button onClick={() => startExam(sub, "test")} disabled={loading} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
-                      🔐 Test (20Q)
+                      Test (20Q)
                     </button>
-                    <button onClick={() => startExam(sub, "exam")} disabled={loading} style={{ ...btnSec, padding: "12px 20px", fontSize: 16 }}>📝 Exam (40Q)</button>
+                    <button onClick={() => startExam(sub, "exam")} disabled={loading} style={{ ...btnSec, padding: "12px 20px", fontSize: 16 }}>Exam (40Q)</button>
                     <button onClick={() => startExam(sub, "practice")} disabled={loading} style={{ ...btnOut, padding: "12px 20px", fontSize: 16 }}>🎯 Practice</button>
                   </div>
                 </div>
@@ -1166,7 +1330,7 @@ export default function App() {
               <span style={{ fontSize: 18, fontWeight: 800, color: C.navy }}>Question {curQ + 1} of {questions.length}</span>
               <button onClick={() => setFlagged(prev => { const n = new Set(prev); n.has(curQ) ? n.delete(curQ) : n.add(curQ); return n; })}
                 style={{ background: flagged.has(curQ) ? C.yellowLight : "#fff", border: `2px solid ${flagged.has(curQ) ? C.yellow : C.border}`, borderRadius: 10, padding: "10px 18px", cursor: "pointer", color: flagged.has(curQ) ? "#8a7200" : C.textSec, fontSize: 16, fontWeight: 700 }}>
-                🚩 {flagged.has(curQ) ? "Flagged" : "Flag"}
+                {flagged.has(curQ) ? "Flagged" : "Flag"}
               </button>
             </div>
 
@@ -1198,17 +1362,17 @@ export default function App() {
 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28, gap: 12 }}>
               <button onClick={() => setCurQ(Math.max(0, curQ - 1))} disabled={curQ === 0}
-                style={{ ...btnSec, flex: 1, opacity: curQ === 0 ? 0.4 : 1 }}>← Previous</button>
+                style={{ ...btnSec, flex: 1, opacity: curQ === 0 ? 0.4 : 1 }}>Previous</button>
               {curQ < questions.length - 1 ? (
                 <button onClick={() => setCurQ(curQ + 1)} style={{ ...btnP, flex: 1 }}>Next →</button>
               ) : (
-                <button onClick={finishExam} style={{ ...btnP, flex: 1, background: C.green }}>✓ Submit</button>
+                <button onClick={finishExam} style={{ ...btnP, flex: 1, background: C.green }}>Submit</button>
               )}
             </div>
 
             {flagged.size > 0 && (
               <div style={{ ...cardS({ marginTop: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
-                <span style={{ fontSize: 16, color: "#8a7200", fontWeight: 700 }}>🚩 {flagged.size} flagged question{flagged.size !== 1 ? "s" : ""}</span>
+                <span style={{ fontSize: 16, color: "#8a7200", fontWeight: 700 }}>{flagged.size} flagged question{flagged.size !== 1 ? "s" : ""}</span>
               </div>
             )}
           </>)}
@@ -1247,7 +1411,7 @@ export default function App() {
         <Header title="Exam Results" showLogout={true} />
         <div style={{ maxWidth: 520, margin: "0 auto", padding: 24 }}>
           <div style={{ textAlign: "center", marginTop: 24 }}>
-            <div style={{ fontSize: 80, marginBottom: 10 }}>{pass ? "🎉" : "📚"}</div>
+            <div style={{ fontSize: 48, marginBottom: 10, fontWeight: 900, color: pass ? C.green : C.red }}>{pass ? "PASS" : "FAIL"}</div>
             <h2 style={{ fontSize: 34, fontWeight: 900, color: pass ? C.green : C.red, margin: "0 0 6px" }}>{result.score}%</h2>
             <p style={{ fontSize: 20, color: C.textSec, margin: "0 0 6px" }}>{result.correct} out of {result.total} correct</p>
             <div style={{ background: pass ? C.greenLight : C.redLight, color: pass ? C.green : C.red, padding: "12px 24px", borderRadius: 12, display: "inline-block", fontWeight: 800, fontSize: 18, marginTop: 14 }}>
@@ -1264,12 +1428,19 @@ export default function App() {
             <p style={{ fontSize: 22, fontWeight: 800, color: C.navy, margin: 0 }}>Year {result.year}{result.track ? ` — ${result.track}` : ""}</p>
           </div>
 
-          <button onClick={() => { setView("subjectSelect"); setResult(null); }} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 20, padding: 18, fontSize: 20 }}>
-            ← Back to Subjects
+          <button onClick={() => { 
+            if (result.section === "entrance") {
+              setView("entrance-subjects");
+            } else {
+              setView("subjectSelect");
+            }
+            setResult(null); 
+          }} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 20, padding: 18, fontSize: 20 }}>
+            Back to Subjects
           </button>
           {examType !== "practice" && (
             <p style={{ textAlign: "center", marginTop: 16, color: C.textSec, fontSize: 16 }}>
-              {serverConnected ? "✓ Result saved to database" : "⚠️ Result not saved (server offline)"}
+              {serverConnected ? "Result saved to database" : "Result not saved (server offline)"}
             </p>
           )}
         </div>
@@ -1288,10 +1459,10 @@ export default function App() {
         <Header title="Admin Panel" />
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
           <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-            <button onClick={() => setAdminTab("questions")} style={{ ...btnP, background: adminTab === "questions" ? C.navy : C.accentLight, color: adminTab === "questions" ? "#fff" : C.navy }}>📚 Questions ({bank.length})</button>
-            <button onClick={() => setAdminTab("results")} style={{ ...btnP, background: adminTab === "results" ? C.navy : C.accentLight, color: adminTab === "results" ? "#fff" : C.navy }}>📊 Results ({results.length})</button>
-            <button onClick={() => setAdminTab("students")} style={{ ...btnP, background: adminTab === "students" ? C.navy : C.accentLight, color: adminTab === "students" ? "#fff" : C.navy }}>👥 Students ({students.length})</button>
-            <button onClick={() => setAdminTab("passwords")} style={{ ...btnP, background: adminTab === "passwords" ? C.navy : C.accentLight, color: adminTab === "passwords" ? "#fff" : C.navy }}>🔐 Test Passwords</button>
+            <button onClick={() => setAdminTab("questions")} style={{ ...btnP, background: adminTab === "questions" ? C.navy : C.accentLight, color: adminTab === "questions" ? "#fff" : C.navy }}>Questions ({bank.length})</button>
+            <button onClick={() => setAdminTab("results")} style={{ ...btnP, background: adminTab === "results" ? C.navy : C.accentLight, color: adminTab === "results" ? "#fff" : C.navy }}>Results ({results.length})</button>
+            <button onClick={() => setAdminTab("students")} style={{ ...btnP, background: adminTab === "students" ? C.navy : C.accentLight, color: adminTab === "students" ? "#fff" : C.navy }}>Students ({students.length})</button>
+            <button onClick={() => setAdminTab("passwords")} style={{ ...btnP, background: adminTab === "passwords" ? C.navy : C.accentLight, color: adminTab === "passwords" ? "#fff" : C.navy }}>Test Passwords</button>
           </div>
 
           {/* PASSWORD MANAGEMENT TAB */}
@@ -1301,20 +1472,20 @@ export default function App() {
 
               <div style={{ ...cardS({ marginBottom: 20, background: C.greenLight, borderColor: C.green }) }}>
                 <p style={{ margin: 0, color: C.green, fontSize: 16 }}>
-                  ✅ <strong>Fixed Passwords:</strong> Each subject has a permanent unique password that never changes. These passwords are hardcoded and cannot be modified.
+                  <strong>Fixed Passwords:</strong> Each subject has a permanent unique password that never changes. These passwords are hardcoded and cannot be modified.
                 </p>
               </div>
 
               <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
                 <p style={{ margin: 0, color: "#8a7200", fontSize: 16 }}>
-                  ℹ️ <strong>Note:</strong> Passwords are only required for <strong>Test (20Q)</strong>. Exam and Practice are freely accessible.
+                  <strong>Note:</strong> Passwords are only required for <strong>Test (20Q)</strong>. Exam and Practice are freely accessible.
                 </p>
               </div>
 
               {/* Elementary Passwords */}
               <div style={{ ...cardS({ marginBottom: 24 }) }}>
                 <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
-                  🎓 Elementary School (Years 1-6)
+                  Elementary School (Years 1-6)
                 </h4>
                 {ELEMENTARY_YEARS.map(year => {
                   const yearSubjects = ELEMENTARY_SUBJECTS[year] || [];
@@ -1367,7 +1538,7 @@ export default function App() {
               {/* Senior College Passwords */}
               <div style={cardS()}>
                 <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
-                  🎓 Senior College (Years 10-12)
+                  Senior College (Years 10-12)
                 </h4>
                 {SENIOR_COLLEGE_YEARS.map(year => (
                   <div key={year} style={{ marginBottom: 24 }}>
@@ -1395,6 +1566,49 @@ export default function App() {
                     })}
                   </div>
                 ))}
+              </div>
+
+              {/* Common Entrance Passwords */}
+              <div style={cardS()}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  Common Entrance
+                </h4>
+                
+                {/* Elementary Arm */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Elementary Arm</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {COMMON_ENTRANCE_SUBJECTS.map(subject => {
+                      const key = getPasswordKey("entrance", "elementary", subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* College Arm */}
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>College Arm</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {COMMON_ENTRANCE_SUBJECTS.map(subject => {
+                      const key = getPasswordKey("entrance", "college", subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1465,7 +1679,7 @@ export default function App() {
               <div style={cardS({ marginBottom: 24 })}>
                 <p style={{ color: C.textSec, fontSize: 16, marginBottom: 10 }}>Paste JSON array of questions:</p>
                 <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} style={{ ...inputS, minHeight: 200, fontFamily: "monospace", fontSize: 14 }} placeholder='[{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"section":"elementary","year":1,"subject":"Mathematics","type":"test"}]' />
-                <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>📤 Upload JSON</button>
+                <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>Upload JSON</button>
               </div>
 
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Bulk Delete Questions</h3>
@@ -1544,7 +1758,7 @@ export default function App() {
                           cursor: (loading || matchingCount === 0 || !newQ.subject) ? "not-allowed" : "pointer"
                         }}
                       >
-                        🗑 Delete {matchingCount} Question{matchingCount !== 1 ? "s" : ""}
+                        Delete {matchingCount} Question{matchingCount !== 1 ? "s" : ""}
                       </button>
                     </>
                   );
@@ -1569,7 +1783,7 @@ export default function App() {
                       </div>
                       <span style={{ fontSize: 14, color: C.textSec }}>{q.section} • Year {q.year}{q.track ? ` • ${q.track}` : ""} • {q.subject} • {q.type}</span>
                     </div>
-                    <button onClick={() => deleteQ(q.id)} style={{ ...btnOut, padding: "8px 14px", fontSize: 14, alignSelf: "flex-start" }}>🗑 Delete</button>
+                    <button onClick={() => deleteQ(q.id)} style={{ ...btnOut, padding: "8px 14px", fontSize: 14, alignSelf: "flex-start" }}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -1582,7 +1796,7 @@ export default function App() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <h3 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.navy }}>All Results ({results.length})</h3>
                 {results.length > 0 && (
-                  <button onClick={clearAllResults} style={{ ...btnOut, padding: "10px 18px", fontSize: 16 }}>🗑 Clear All</button>
+                  <button onClick={clearAllResults} style={{ ...btnOut, padding: "10px 18px", fontSize: 16 }}>Clear All</button>
                 )}
               </div>
 
@@ -1600,6 +1814,7 @@ export default function App() {
                       <option value="">All Sections</option>
                       <option value="elementary">Elementary</option>
                       <option value="college">College</option>
+                      <option value="entrance">Common Entrance</option>
                     </select>
                   </div>
                   <div>
@@ -1613,6 +1828,12 @@ export default function App() {
                       <option value="">All Years</option>
                       {filterSection === "elementary" && ELEMENTARY_YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
                       {filterSection === "college" && [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS].map(y => <option key={y} value={y}>Year {y}</option>)}
+                      {filterSection === "entrance" && (
+                        <>
+                          <option value="elementary">Elementary</option>
+                          <option value="college">College</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div>
@@ -1633,7 +1854,7 @@ export default function App() {
                     onClick={() => { setFilterSection(""); setFilterYear(""); setFilterSubject(""); }}
                     style={{ ...btnOut, marginTop: 16, padding: "10px 18px", fontSize: 14 }}
                   >
-                    ✕ Clear Filters
+                    Clear Filters
                   </button>
                 )}
               </div>
@@ -1744,7 +1965,7 @@ function LoginForm({ isAdmin, section, onLogin, C, inputS, btnP }) {
       )}
       {err && <p style={{ color: C.red, fontSize: 16, margin: 0, fontWeight: 600 }}>{err}</p>}
       <button onClick={submit} style={{ ...btnP, width: "100%", justifyContent: "center", padding: 20, fontSize: 22, marginTop: 10 }}>
-        {isAdmin ? "🔐 Access Admin" : "📝 Start CBT"}
+        {isAdmin ? "Access Admin" : "Start CBT"}
       </button>
     </div>
   );
