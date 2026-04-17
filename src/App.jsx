@@ -11,21 +11,21 @@ const JUNIOR_COLLEGE_YEARS = [7, 8, 9];
 const SENIOR_COLLEGE_YEARS = [10, 11, 12];
 const SENIOR_TRACKS = ["Science", "Commercial", "Arts"];
 
-const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA","ICT","PVS"];
+const JUNIOR_SUBJECTS = ["Mathematics", "English", "Basic Science", "Basic Technology", "Social Studies", "Civic Education", "French", "Computer Studies", "Agricultural Science", "Home Economics", "CRS", "Business Studies", "Yoruba", "History","Music","PHE","CCA","ICT","PVS", "General Knowledge"];
 const SENIOR_SUBJECTS = {
   Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Further Mathematics", "Computer Studies", "Civic Education", "Geography", "Agricultural Science","ICT", "General Knowledge"],
-  Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government"],
-  Arts: ["Mathematics", "English", "Literature in English", "Government", "Yoruba", "CRS", "Civic Education", "Marketing", "Economics"]
+  Commercial: ["Mathematics", "English", "Commerce", "Economics", "Accounting", "Civic Education", "Marketing", "Government", "General Knowledge"],
+  Arts: ["Mathematics", "English", "Literature in English", "Government", "Yoruba", "CRS", "Civic Education", "Marketing", "Economics", "General Knowledge"]
 };
 
 // Updated: Added French for Year 1-4
 const ELEMENTARY_SUBJECTS = {
-  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music"],
-  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music"],
-  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History", "CCA", "CRS", "PHE", "Music"],
-  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE", "Music"],
-  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music"],
-  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music"]
+  1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music", "General Knowledge"],
+  2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music", "General Knowledge"],
+  3: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"],
+  4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"],
+  5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"],
+  6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"]
 };
 
 // Common Entrance subjects
@@ -1042,45 +1042,58 @@ export default function App() {
         <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
             <Logo type="elementary" size={50} />
-            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your arm</p>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your year level</p>
           </div>
 
           <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
             <p style={{ margin: 0, color: "#8a7200", fontSize: 16, fontWeight: 600 }}>
-              Each subject has <strong>50 questions</strong> and <strong>60 minutes (1 hour)</strong> to complete
+              Each exam has <strong>40 questions</strong> and <strong>50 minutes</strong> to complete
             </p>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Elementary Arm */}
-            <HoverCard 
-              onClick={() => { 
-                setSelYear("elementary");
-                setView("entrance-subjects"); 
-              }}
-              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
-            >
-              <Logo type="elementary" size={70} />
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Elementary Arm</h3>
-                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English • Science</p>
-              </div>
-            </HoverCard>
+            {/* Year 1-6 Elementary */}
+            {[1, 2, 3, 4, 5, 6].map(year => (
+              <HoverCard 
+                key={`year-${year}`}
+                onClick={() => { 
+                  setSection("elementary");
+                  setSelYear(year);
+                  setView("entrance-subjects"); 
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 20, padding: 20 }}
+              >
+                <div style={{ background: C.accentLight, color: C.accent, padding: "12px 20px", borderRadius: 8, fontWeight: 800, fontSize: 18 }}>
+                  Y{year}
+                </div>
+                <div>
+                  <h3 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 700, color: C.navy }}>Year {year}</h3>
+                  <p style={{ margin: 0, color: C.textSec, fontSize: 15 }}>Mathematics • English • General Knowledge</p>
+                </div>
+              </HoverCard>
+            ))}
 
-            {/* College Arm */}
-            <HoverCard 
-              onClick={() => { 
-                setSelYear("college");
-                setView("entrance-subjects"); 
-              }}
-              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
-            >
-              <Logo type="college" size={70} />
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>College Arm</h3>
-                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English • Science</p>
-              </div>
-            </HoverCard>
+            {/* Year 7-11 College */}
+            {[7, 8, 9, 10, 11].map(year => (
+              <HoverCard 
+                key={`year-${year}`}
+                onClick={() => { 
+                  setSection("college");
+                  setSelYear(year);
+                  setSelTrack(year >= 10 ? null : "");
+                  setView("entrance-subjects"); 
+                }}
+                style={{ display: "flex", alignItems: "center", gap: 20, padding: 20 }}
+              >
+                <div style={{ background: C.greenLight, color: C.green, padding: "12px 20px", borderRadius: 8, fontWeight: 800, fontSize: 18 }}>
+                  Y{year}
+                </div>
+                <div>
+                  <h3 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 700, color: C.navy }}>Year {year}</h3>
+                  <p style={{ margin: 0, color: C.textSec, fontSize: 15 }}>Mathematics • English • General Knowledge</p>
+                </div>
+              </HoverCard>
+            ))}
           </div>
         </div>
       </div>
@@ -1091,7 +1104,25 @@ export default function App() {
   // ENTRANCE SUBJECTS SELECT
   // ══════════════════════════════════════════════════════
   if (view === "entrance-subjects") {
-    const armName = selYear === "elementary" ? "Elementary" : "College";
+    // Check if this is an entrance exam or a year level
+    const isEntranceExam = selYear === "elementary" || selYear === "college";
+    const isYearLevel = typeof selYear === "number";
+    
+    let titleText = "";
+    let infoText = "";
+    let questionInfo = "";
+    
+    if (isEntranceExam) {
+      const armName = selYear === "elementary" ? "Elementary" : "College";
+      titleText = `Common Entrance - ${armName}`;
+      infoText = "Select a subject to begin your entrance exam";
+      questionInfo = "Each subject has 50 questions and 60 minutes (1 hour) to complete";
+    } else if (isYearLevel) {
+      titleText = `Year ${selYear}`;
+      infoText = "Select a subject";
+      questionInfo = "Each exam has 40 questions and 50 minutes to complete";
+    }
+    
     return (
       <div style={pageS}>
         <Toast />
@@ -1108,16 +1139,16 @@ export default function App() {
           error={passwordError}
           C={C}
         />
-        <Header title={`Common Entrance - ${armName}`} onBack={() => setView("entrance-arm")} />
+        <Header title={titleText} onBack={() => setView("entrance-arm")} />
         <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-            <Logo type={selYear} size={50} />
-            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select a subject to begin your entrance exam</p>
+            <Logo type={isYearLevel && selYear <= 6 ? "elementary" : isYearLevel ? "college" : selYear} size={50} />
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>{infoText}</p>
           </div>
 
           <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
             <p style={{ margin: 0, color: "#8a7200", fontSize: 16, fontWeight: 600 }}>
-              Each subject has <strong>50 questions</strong> and <strong>60 minutes (1 hour)</strong> to complete
+              <strong>{questionInfo}</strong>
             </p>
           </div>
 
@@ -1126,16 +1157,25 @@ export default function App() {
               <HoverCard 
                 key={subj} 
                 onClick={() => {
+                  setSelSubject(subj);
                   setSelTrack(null);
-                  setPendingTest({ subject: subj, type: "exam" });
-                  setShowPasswordModal(true);
-                  setPasswordError("");
+                  if (isEntranceExam) {
+                    setSection("entrance");
+                    setPendingTest({ subject: subj, type: "exam" });
+                    setShowPasswordModal(true);
+                    setPasswordError("");
+                  } else {
+                    // For year levels, go to exam type selection
+                    setView("examTypeSelect");
+                  }
                 }}
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
               >
                 <div>
                   <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
-                  <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>50 Questions • 60 Minutes • Password Required</p>
+                  <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>
+                    {isEntranceExam ? "50 Questions • 60 Minutes • Password Required" : "Test • Exam • Practice"}
+                  </p>
                 </div>
                 <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
               </HoverCard>
