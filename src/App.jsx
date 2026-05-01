@@ -18,7 +18,6 @@ const SENIOR_SUBJECTS = {
   Arts: ["Mathematics", "English", "Literature in English", "Government", "Yoruba", "CRS", "Civic Education", "Marketing", "Economics", "General Knowledge"]
 };
 
-// Updated: Added French for Year 1-4
 const ELEMENTARY_SUBJECTS = {
   1: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music", "General Knowledge"],
   2: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Handwriting", "Phonics", "French", "Basic Technology","History", "CCA", "CRS", "PHE","Computer Studies", "Music", "General Knowledge"],
@@ -26,6 +25,17 @@ const ELEMENTARY_SUBJECTS = {
   4: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"],
   5: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"],
   6: ["English Language", "Mathematics", "Basic Science", "Social Studies", "Verbal Reasoning", "Quantitative Reasoning", "Computer Studies", "French", "Civic Education", "Agricultural Science", "Basic Technology","History", "CCA", "CRS", "PHE", "Music", "General Knowledge"]
+};
+
+// VAT Section Structure
+const VAT_SECTIONS = {
+  elementary: ["Mathematics", "English Language", "Basic Science"],
+  juniorCollege: ["Mathematics", "English Language", "Civic Education", "ICT", "Basic Science"],
+  seniorCollege: {
+    Science: ["Mathematics", "English Language", "Economics", "Civic Education", "Biology", "Physics", "Chemistry"],
+    Arts: ["Mathematics", "English Language", "Economics", "Civic Education", "Government", "Literature", "CRS"],
+    Commercial: ["Commerce", "Financial Accounting", "Marketing"]
+  }
 };
 
 // Common Entrance subjects
@@ -459,11 +469,32 @@ export default function App() {
     // Common Entrance passwords - College
     "entrance-college-Mathematics": "CECOLL-MATH",
     "entrance-college-English": "CECOLL-ENG",
-    "entrance-college-General Knowledge": "CECOLL-GK"
+    "entrance-college-General Knowledge": "CECOLL-GK",
+    // VAT passwords - Elementary
+    "vat-Mathematics": "VAT-MATH",
+    "vat-English Language": "VAT-ENG",
+    "vat-Basic Science": "VAT-BSC",
+    // VAT passwords - Junior College
+    "vat-Civic Education": "VAT-CIV",
+    "vat-ICT": "VAT-ICT",
+    // VAT passwords - Senior College (shared across departments)
+    "vat-Economics": "VAT-ECON",
+    "vat-Biology": "VAT-BIO",
+    "vat-Physics": "VAT-PHY",
+    "vat-Chemistry": "VAT-CHEM",
+    "vat-Government": "VAT-GOV",
+    "vat-Literature": "VAT-LIT",
+    "vat-CRS": "VAT-CRS",
+    "vat-Commerce": "VAT-COM",
+    "vat-Financial Accounting": "VAT-ACCT",
+    "vat-Marketing": "VAT-MKT"
   };
 
   // Get password key for a subject
   const getPasswordKey = (section, year, subject, track = null) => {
+    if (section === "vat") {
+      return `vat-${subject}`;
+    }
     if (section === "entrance") {
       // year will contain 'elementary' or 'college' for entrance exams
       return `entrance-${year}-${subject}`;
@@ -528,34 +559,52 @@ export default function App() {
     try {
       const allQs = await questionsAPI.getAll();
       
-      // For entrance exams, map to actual year numbers
-      let filterSection = section;
-      let filterYear = selYear;
+      let pool;
       
-      if (section === "entrance") {
-        if (selYear === "college") {
-          filterSection = "college";
-          filterYear = 12;
-        } else if (selYear === "elementary") {
-          filterSection = "elementary";
-          filterYear = 6;
+      // For VAT section - no year filtering
+      if (section === "vat") {
+        pool = allQs.filter(q => 
+          q.section === "vat" && 
+          q.subject === subject
+        );
+      } else {
+        // For entrance exams, map to actual year numbers
+        let filterSection = section;
+        let filterYear = selYear;
+        
+        if (section === "entrance") {
+          if (selYear === "college") {
+            filterSection = "college";
+            filterYear = 12;
+          } else if (selYear === "elementary") {
+            filterSection = "elementary";
+            filterYear = 6;
+          }
         }
+        
+        pool = allQs.filter(q => 
+          q.section === filterSection && 
+          q.year === filterYear && 
+          q.subject === subject && 
+          q.type === type
+        );
       }
-      
-      let pool = allQs.filter(q => 
-        q.section === filterSection && 
-        q.year === filterYear && 
-        q.subject === subject && 
-        q.type === type
-      );
 
       if (pool.length === 0) {
         notify(`No ${type} questions available for ${subject}. Contact admin.`, "error");
         return;
       }
 
-      // For entrance exams, use 50 questions. For regular exams, use 40
-      const needed = (section === "entrance" && type === "exam") ? 50 : QUESTION_COUNTS[type];
+      // Determine number of questions needed
+      let needed;
+      if (section === "vat") {
+        needed = pool.length; // Use all available VAT questions
+      } else if (section === "entrance" && type === "exam") {
+        needed = 50;
+      } else {
+        needed = QUESTION_COUNTS[type];
+      }
+      
       if (pool.length < needed) {
         notify(`Only ${pool.length}/${needed} questions available. Using what we have.`, "info");
       }
@@ -568,7 +617,20 @@ export default function App() {
       setResult(null);
       setView("exam");
 
-      const mins = (section === "entrance" && type === "exam") ? 60 : type === "exam" ? 50 : type === "test" ? 25 : 15;
+      // Determine timer duration
+      let mins;
+      if (section === "vat") {
+        mins = Math.ceil(pool.length * 1.5); // 1.5 minutes per question for VAT
+      } else if (section === "entrance" && type === "exam") {
+        mins = 60;
+      } else if (type === "exam") {
+        mins = 50;
+      } else if (type === "test") {
+        mins = 25;
+      } else {
+        mins = 15;
+      }
+      
       timer.start(mins);
     } catch (error) {
       console.error('Error loading questions:', error);
@@ -996,6 +1058,17 @@ export default function App() {
           </div>
         </HoverCard>
 
+        {/* VAT (Value Added Test) */}
+        <HoverCard onClick={() => { setSection("vat"); setView("vat-subjects"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 12, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 900, color: "#fff" }}>
+            VAT
+          </div>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Value Added Test</h3>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Assessment Tests</p>
+          </div>
+        </HoverCard>
+
         {/* Admin */}
         <HoverCard onClick={() => { setSection("admin"); setView("login"); }} style={{ textAlign: "center", background: C.accentLight, borderColor: C.navy + "20" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
@@ -1153,33 +1226,238 @@ export default function App() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {COMMON_ENTRANCE_SUBJECTS.map(subj => (
+            {COMMON_ENTRANCE_SUBJECTS.map(subj => {
+              const cnt = isYearLevel ? bank.filter(q => q.section === section && q.year === selYear && q.subject === subj).length : 0;
+              
+              if (isEntranceExam) {
+                // Entrance exam - clickable card
+                return (
+                  <HoverCard 
+                    key={subj}
+                    onClick={() => {
+                      setSelSubject(subj);
+                      setSelTrack(null);
+                      setSection("entrance");
+                      setPendingTest({ subject: subj, type: "exam" });
+                      setShowPasswordModal(true);
+                      setPasswordError("");
+                    }}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
+                  >
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>50 Questions • 60 Minutes • Password Required</p>
+                    </div>
+                    <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
+                  </HoverCard>
+                );
+              } else {
+                // Year level - show buttons
+                return (
+                  <div key={subj} style={cardS({ padding: "20px" })}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                      <div>
+                        <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                        <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} question{cnt !== 1 ? "s" : ""} in bank</p>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <button onClick={() => { setSelSubject(subj); startExam(subj, "test"); }} disabled={loading} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
+                        Test (20Q)
+                      </button>
+                      <button onClick={() => { setSelSubject(subj); startExam(subj, "exam"); }} disabled={loading} style={{ ...btnSec, padding: "12px 20px", fontSize: 16 }}>
+                        Exam (40Q)
+                      </button>
+                      <button onClick={() => { setSelSubject(subj); startExam(subj, "practice"); }} disabled={loading} style={{ ...btnOut, padding: "12px 20px", fontSize: 16 }}>
+                        🎯 Practice
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // VAT (VALUE ADDED TEST)
+  // ══════════════════════════════════════════════════════
+  if (view === "vat-subjects") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <Header title="Value Added Test (VAT)" onBack={() => setView("home")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#fff" }}>
+              VAT
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your section</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Elementary Section */}
+            <HoverCard 
+              onClick={() => { 
+                setSelYear("elementary");
+                setView("vat-section-subjects"); 
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
+            >
+              <Logo type="elementary" size={70} />
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Elementary</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English Language • Basic Science</p>
+              </div>
+            </HoverCard>
+
+            {/* Junior College */}
+            <HoverCard 
+              onClick={() => { 
+                setSelYear("juniorCollege");
+                setView("vat-section-subjects"); 
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
+            >
+              <Logo type="college" size={70} />
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Junior College</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Years 7-9</p>
+              </div>
+            </HoverCard>
+
+            {/* Senior College */}
+            <HoverCard 
+              onClick={() => { 
+                setSelYear("seniorCollege");
+                setView("vat-department-select"); 
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
+            >
+              <Logo type="college" size={70} />
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Senior College</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Years 10-12 • Science • Arts • Commercial</p>
+              </div>
+            </HoverCard>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VAT Department Select (for Senior College)
+  if (view === "vat-department-select") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <Header title="Senior College - VAT" onBack={() => setView("vat-subjects")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <Logo type="college" size={50} />
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your department</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {["Science", "Arts", "Commercial"].map(dept => (
               <HoverCard 
-                key={subj} 
-                onClick={() => {
-                  setSelSubject(subj);
-                  setSelTrack(null);
-                  if (isEntranceExam) {
-                    setSection("entrance");
-                    setPendingTest({ subject: subj, type: "exam" });
-                    setShowPasswordModal(true);
-                    setPasswordError("");
-                  } else {
-                    // For year levels, go to exam type selection
-                    setView("examTypeSelect");
-                  }
+                key={dept}
+                onClick={() => { 
+                  setSelTrack(dept);
+                  setView("vat-section-subjects"); 
                 }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
+                style={{ padding: 20 }}
               >
-                <div>
-                  <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
-                  <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>
-                    {isEntranceExam ? "50 Questions • 60 Minutes • Password Required" : "Test • Exam • Practice"}
-                  </p>
-                </div>
-                <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
+                <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{dept} Department</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>
+                  {dept === "Science" && "Math • English • Economics • Civic Ed • Biology • Physics • Chemistry"}
+                  {dept === "Arts" && "Math • English • Economics • Civic Ed • Government • Literature • CRS"}
+                  {dept === "Commercial" && "Commerce • Financial Accounting • Marketing"}
+                </p>
               </HoverCard>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // VAT Section Subjects
+  if (view === "vat-section-subjects") {
+    let subjects = [];
+    let sectionTitle = "";
+    
+    if (selYear === "elementary") {
+      subjects = VAT_SECTIONS.elementary;
+      sectionTitle = "Elementary VAT";
+    } else if (selYear === "juniorCollege") {
+      subjects = VAT_SECTIONS.juniorCollege;
+      sectionTitle = "Junior College VAT";
+    } else if (selYear === "seniorCollege" && selTrack) {
+      subjects = VAT_SECTIONS.seniorCollege[selTrack];
+      sectionTitle = `Senior College - ${selTrack} Department`;
+    }
+    
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
+        <Header 
+          title={sectionTitle} 
+          onBack={() => selYear === "seniorCollege" ? setView("vat-department-select") : setView("vat-subjects")} 
+        />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#fff" }}>
+              VAT
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select a subject</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {subjects.map(subj => {
+              const cnt = bank.filter(q => q.section === "vat" && q.subject === subj).length;
+              
+              return (
+                <div key={subj} style={cardS({ padding: "20px" })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} Question{cnt !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelSubject(subj);
+                      setSection("vat");
+                      setPendingTest({ subject: subj, type: "test" });
+                      setShowPasswordModal(true);
+                      setPasswordError("");
+                    }}
+                    style={{ ...btnP, width: "100%", justifyContent: "center", padding: "14px", fontSize: 18, fontWeight: 700 }}
+                  >
+                    Start Test
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1639,6 +1917,103 @@ export default function App() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
                     {COMMON_ENTRANCE_SUBJECTS.map(subject => {
                       const key = getPasswordKey("entrance", "college", subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* VAT (Value Added Test) Passwords */}
+              <div style={cardS()}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  VAT (Value Added Test)
+                </h4>
+                
+                {/* Elementary Section */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Elementary</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {VAT_SECTIONS.elementary.map(subject => {
+                      const key = getPasswordKey("vat", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Junior College */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Junior College (Years 7-9)</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {VAT_SECTIONS.juniorCollege.map(subject => {
+                      const key = getPasswordKey("vat", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Senior College - Science */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Senior College - Science Department</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {VAT_SECTIONS.seniorCollege.Science.map(subject => {
+                      const key = getPasswordKey("vat", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Senior College - Arts */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Senior College - Arts Department</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {VAT_SECTIONS.seniorCollege.Arts.map(subject => {
+                      const key = getPasswordKey("vat", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Senior College - Commercial */}
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Senior College - Commercial Department</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {VAT_SECTIONS.seniorCollege.Commercial.map(subject => {
+                      const key = getPasswordKey("vat", null, subject);
                       return (
                         <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
                           <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
