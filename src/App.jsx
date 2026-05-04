@@ -1296,71 +1296,46 @@ export default function App() {
             <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#fff" }}>
               VAT
             </div>
-            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your section</p>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your year</p>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Elementary Section */}
-            <HoverCard 
-              onClick={() => { 
-                setSelYear("elementary");
-                setView("vat-section-subjects"); 
-              }}
-              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
-            >
-              <Logo type="elementary" size={70} />
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Elementary</h3>
-                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Mathematics • English Language • Basic Science</p>
-              </div>
-            </HoverCard>
-
-            {/* Junior College */}
-            <HoverCard 
-              onClick={() => { 
-                setSelYear("juniorCollege");
-                setView("vat-section-subjects"); 
-              }}
-              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
-            >
-              <Logo type="college" size={70} />
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Junior College</h3>
-                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Years 7-9</p>
-              </div>
-            </HoverCard>
-
-            {/* Senior College */}
-            <HoverCard 
-              onClick={() => { 
-                setSelYear("seniorCollege");
-                setView("vat-department-select"); 
-              }}
-              style={{ display: "flex", alignItems: "center", gap: 20, padding: 24 }}
-            >
-              <Logo type="college" size={70} />
-              <div>
-                <h3 style={{ margin: "0 0 4px", fontSize: 24, fontWeight: 800, color: C.navy }}>Senior College</h3>
-                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Years 10-12 • Science • Arts • Commercial</p>
-              </div>
-            </HoverCard>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            {/* Years 1-12 */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(year => (
+              <HoverCard 
+                key={year}
+                onClick={() => { 
+                  setSelYear(year);
+                  // Years 10-12 need department selection
+                  if (year >= 10) {
+                    setView("vat-department-select");
+                  } else {
+                    setView("vat-year-subjects");
+                  }
+                }}
+                style={{ padding: 20, textAlign: "center" }}
+              >
+                <div style={{ fontSize: 32, fontWeight: 800, color: C.navy, marginBottom: 4 }}>{year}</div>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 14 }}>Year {year}</p>
+              </HoverCard>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  // VAT Department Select (for Senior College)
+  // VAT Department Select (for Years 10-12)
   if (view === "vat-department-select") {
     return (
       <div style={pageS}>
         <Toast />
         <LoadingOverlay />
-        <Header title="Senior College - VAT" onBack={() => setView("vat-subjects")} />
+        <Header title={`Year ${selYear} VAT - Select Department`} onBack={() => setView("vat-subjects")} />
         <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
             <Logo type="college" size={50} />
-            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Select your department</p>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Choose your department</p>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1369,7 +1344,7 @@ export default function App() {
                 key={dept}
                 onClick={() => { 
                   setSelTrack(dept);
-                  setView("vat-section-subjects"); 
+                  setView("vat-year-subjects"); 
                 }}
                 style={{ padding: 20 }}
               >
@@ -1387,20 +1362,19 @@ export default function App() {
     );
   }
 
-  // VAT Section Subjects
-  if (view === "vat-section-subjects") {
+  // VAT Year Subjects
+  if (view === "vat-year-subjects") {
     let subjects = [];
-    let sectionTitle = "";
+    let sectionTitle = `Year ${selYear} VAT`;
     
-    if (selYear === "elementary") {
+    // Determine subjects based on year
+    if (selYear <= 6) {
       subjects = VAT_SECTIONS.elementary;
-      sectionTitle = "Elementary VAT";
-    } else if (selYear === "juniorCollege") {
+    } else if (selYear >= 7 && selYear <= 9) {
       subjects = VAT_SECTIONS.juniorCollege;
-      sectionTitle = "Junior College VAT";
-    } else if (selYear === "seniorCollege" && selTrack) {
+    } else if (selYear >= 10 && selTrack) {
       subjects = VAT_SECTIONS.seniorCollege[selTrack];
-      sectionTitle = `Senior College - ${selTrack} Department`;
+      sectionTitle = `Year ${selYear} VAT - ${selTrack} Department`;
     }
     
     return (
@@ -1421,7 +1395,7 @@ export default function App() {
         />
         <Header 
           title={sectionTitle} 
-          onBack={() => selYear === "seniorCollege" ? setView("vat-department-select") : setView("vat-subjects")} 
+          onBack={() => selYear >= 10 ? setView("vat-department-select") : setView("vat-subjects")} 
         />
         <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
@@ -1433,7 +1407,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subjects.map(subj => {
-              const cnt = bank.filter(q => q.section === "vat" && q.subject === subj).length;
+              const cnt = bank.filter(q => q.section === "vat" && q.year === selYear && q.subject === subj).length;
               
               return (
                 <div key={subj} style={cardS({ padding: "20px" })}>
@@ -2040,12 +2014,14 @@ export default function App() {
                     <select value={newQ.section} onChange={e => setNewQ({ ...newQ, section: e.target.value, year: 1, track: "" })} style={inputS}>
                       <option value="elementary">Elementary</option>
                       <option value="college">College</option>
+                      <option value="entrance">Common Entrance</option>
+                      <option value="vat">VAT</option>
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
                     <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
-                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2107,12 +2083,14 @@ export default function App() {
                     <select value={newQ.section} onChange={e => setNewQ({ ...newQ, section: e.target.value, year: 1, track: "" })} style={inputS}>
                       <option value="elementary">Elementary</option>
                       <option value="college">College</option>
+                      <option value="entrance">Common Entrance</option>
+                      <option value="vat">VAT</option>
                     </select>
                   </div>
                   <div>
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
                     <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
-                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
                     </select>
                   </div>
                 </div>
