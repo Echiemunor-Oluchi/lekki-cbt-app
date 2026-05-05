@@ -32,9 +32,9 @@ const VAT_SECTIONS = {
   elementary: ["Mathematics", "English Language", "Basic Science"],
   juniorCollege: ["Mathematics", "English Language", "Civic Education", "ICT", "Basic Science", "Business Studies"],
   seniorCollege: {
-    Science: ["Mathematics", "English Language", "Economics", "Civic Education", "Biology", "Physics", "Chemistry"],
-    Arts: ["Mathematics", "English Language", "Economics", "Civic Education", "Government", "Literature", "CRS"],
-    Commercial: ["Commerce", "Financial Accounting", "Marketing"]
+    Science: ["Mathematics", "English Language", "Economics", "Civic Education", "Biology", "Physics", "Chemistry", "ICT"],
+    Arts: ["Mathematics", "English Language", "Economics", "Civic Education", "Government", "Literature", "CRS", "ICT"],
+    Commercial: ["Commerce", "Financial Accounting", "Marketing", "ICT"]
   }
 };
 
