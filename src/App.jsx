@@ -30,7 +30,7 @@ const ELEMENTARY_SUBJECTS = {
 // VAT Section Structure
 const VAT_SECTIONS = {
   elementary: ["Mathematics", "English Language", "Basic Science"],
-  juniorCollege: ["Mathematics", "English Language", "Civic Education", "ICT", "Basic Science"],
+  juniorCollege: ["Mathematics", "English Language", "Civic Education", "ICT", "Basic Science", "Business Studies"],
   seniorCollege: {
     Science: ["Mathematics", "English Language", "Economics", "Civic Education", "Biology", "Physics", "Chemistry"],
     Arts: ["Mathematics", "English Language", "Economics", "Civic Education", "Government", "Literature", "CRS"],
@@ -477,6 +477,7 @@ export default function App() {
     // VAT passwords - Junior College
     "vat-Civic Education": "VAT-CIV",
     "vat-ICT": "VAT-ICT",
+    "vat-Business Studies": "VAT-BUS",
     // VAT passwords - Senior College (shared across departments)
     "vat-Economics": "VAT-ECON",
     "vat-Biology": "VAT-BIO",
