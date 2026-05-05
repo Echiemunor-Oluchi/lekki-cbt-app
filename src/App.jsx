@@ -561,10 +561,11 @@ export default function App() {
       
       let pool;
       
-      // For VAT section - no year filtering
+      // For VAT section - filter by year and subject
       if (section === "vat") {
         pool = allQs.filter(q => 
           q.section === "vat" && 
+          q.year === selYear &&
           q.subject === subject
         );
       } else {
