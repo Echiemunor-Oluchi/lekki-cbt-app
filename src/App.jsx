@@ -742,7 +742,7 @@ export default function App() {
       }
     };
 
-    if (view === "admin" || view === "yearSelect") {
+    if (view === "admin" || view === "yearSelect" || view === "vat-subjects" || view === "vat-year-subjects") {
       loadData();
     }
   }, [view, serverConnected]);
