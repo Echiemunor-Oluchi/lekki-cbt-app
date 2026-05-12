@@ -43,7 +43,7 @@ const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "General Knowledge"]
 
 // Mock Exam subjects
 const MOCK_YEAR6_SUBJECTS = ["Mathematics/Quantitative", "English/Verbal", "General Knowledge", "Yoruba"];
-const MOCK_YEAR9_SUBJECTS = ["Mathematics", "English", "Business Studies", "Basic Technology", "Basic Science", "CCA", "CRS", "Civic Education", "Agricultural Science", "Home Economics", "Yoruba", "History"];
+const MOCK_YEAR9_SUBJECTS = ["Mathematics", "English", "Business Studies", "Basic Technology", "Basic Science", "CCA", "CRS", "Civic Education", "Agricultural Science", "Home Economics", "ICT", "Yoruba", "History"];
 const MOCK_YEAR12_SUBJECTS = {
   Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Economics", "Civic Education", "Further Mathematics", "ICT", "Yoruba", "Geography", "Agricultural Science"],
   Arts: ["Mathematics", "English", "Economics", "Literature in English", "Government", "CRS", "ICT", "Biology", "Civic Education", "Yoruba"],
@@ -514,6 +514,7 @@ export default function App() {
     "mock9-Civic Education": "MOCK9-CIV",
     "mock9-Agricultural Science": "MOCK9-AGRIC",
     "mock9-Home Economics": "MOCK9-HOME",
+    "mock9-ICT": "MOCK9-ICT",
     "mock9-Yoruba": "MOCK9-YORUBA",
     "mock9-History": "MOCK9-HIST",
     // Mock Year 12 passwords (shared across departments)
@@ -2331,6 +2332,67 @@ export default function App() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
                     {VAT_SECTIONS.seniorCollege.Commercial.map(subject => {
                       const key = getPasswordKey("vat", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mock Exam Passwords */}
+              <div style={cardS()}>
+                <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
+                  🎯 Mock Exams
+                </h4>
+                
+                {/* Year 6 Mock */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Year 6 Mock Exam</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {MOCK_YEAR6_SUBJECTS.map(subject => {
+                      const key = getPasswordKey("mock6", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Year 9 Mock */}
+                <div style={{ marginBottom: 20 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Year 9 Mock Exam</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {MOCK_YEAR9_SUBJECTS.map(subject => {
+                      const key = getPasswordKey("mock9", null, subject);
+                      return (
+                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                            {testPasswords[key] || "—"}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Year 12 Mock */}
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Year 12 Mock Exam (All Tracks)</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                    {[...new Set([...MOCK_YEAR12_SUBJECTS.Science, ...MOCK_YEAR12_SUBJECTS.Arts, ...MOCK_YEAR12_SUBJECTS.Commercial])].map(subject => {
+                      const key = getPasswordKey("mock12", null, subject);
                       return (
                         <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
                           <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
