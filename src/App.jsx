@@ -43,7 +43,7 @@ const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "General Knowledge"]
 
 // Mock Exam subjects
 const MOCK_YEAR6_SUBJECTS = ["Mathematics/Quantitative", "English/Verbal", "General Knowledge", "Yoruba"];
-const MOCK_YEAR9_SUBJECTS = ["Mathematics", "English", "Business Studies", "Basic Technology", "Basic Science", "CCA", "CRS", "Civic Education", "Agricultural Science", "Home Economics", "ICT", "Yoruba", "History"];
+const MOCK_YEAR9_SUBJECTS = ["Mathematics", "English", "Business Studies", "Basic Technology", "Basic Science", "CCA", "CRS", "Civic Education", "Agricultural Science", "Home Economics", "ICT", "PHE", "Yoruba", "History"];
 const MOCK_YEAR12_SUBJECTS = {
   Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Economics", "Civic Education", "Further Mathematics", "ICT", "Yoruba", "Geography", "Agricultural Science"],
   Arts: ["Mathematics", "English", "Economics", "Literature in English", "Government", "CRS", "ICT", "Biology", "Civic Education", "Yoruba"],
@@ -515,6 +515,7 @@ export default function App() {
     "mock9-Agricultural Science": "MOCK9-AGRIC",
     "mock9-Home Economics": "MOCK9-HOME",
     "mock9-ICT": "MOCK9-ICT",
+    "mock9-PHE": "MOCK9-PHE",
     "mock9-Yoruba": "MOCK9-YORUBA",
     "mock9-History": "MOCK9-HIST",
     // Mock Year 12 passwords (shared across departments)
