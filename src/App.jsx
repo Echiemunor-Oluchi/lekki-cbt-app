@@ -41,7 +41,16 @@ const VAT_SECTIONS = {
 // Common Entrance subjects
 const COMMON_ENTRANCE_SUBJECTS = ["Mathematics", "English", "General Knowledge"];
 
-const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 50 };
+// Mock Exam subjects
+const MOCK_YEAR6_SUBJECTS = ["Mathematics/Quantitative", "English/Verbal", "General Knowledge", "Yoruba"];
+const MOCK_YEAR9_SUBJECTS = ["Mathematics", "English", "Business Studies", "Basic Technology", "Basic Science", "CCA", "CRS", "Civic Education", "Agricultural Science", "Home Economics", "Yoruba", "History"];
+const MOCK_YEAR12_SUBJECTS = {
+  Science: ["Mathematics", "English", "Physics", "Chemistry", "Biology", "Economics", "Civic Education", "Further Mathematics", "ICT", "Yoruba", "Geography", "Agricultural Science"],
+  Arts: ["Mathematics", "English", "Economics", "Literature in English", "Government", "CRS", "ICT", "Biology", "Civic Education", "Yoruba"],
+  Commercial: ["Mathematics", "English", "Commerce", "Economics", "Marketing", "Financial Accounting", "ICT", "Government", "Biology", "Geography"]
+};
+
+const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 50, mock: 100 };
 
 function generateSampleQuestions(subject, count = 10) {
   const templates = [
@@ -488,7 +497,44 @@ export default function App() {
     "vat-CRS": "VAT-CRS",
     "vat-Commerce": "VAT-COM",
     "vat-Financial Accounting": "VAT-ACCT",
-    "vat-Marketing": "VAT-MKT"
+    "vat-Marketing": "VAT-MKT",
+    // Mock Year 6 passwords
+    "mock6-Mathematics/Quantitative": "MOCK6-MATH",
+    "mock6-English/Verbal": "MOCK6-ENG",
+    "mock6-General Knowledge": "MOCK6-GK",
+    "mock6-Yoruba": "MOCK6-YORUBA",
+    // Mock Year 9 passwords
+    "mock9-Mathematics": "MOCK9-MATH",
+    "mock9-English": "MOCK9-ENG",
+    "mock9-Business Studies": "MOCK9-BUS",
+    "mock9-Basic Technology": "MOCK9-TECH",
+    "mock9-Basic Science": "MOCK9-BSC",
+    "mock9-CCA": "MOCK9-CCA",
+    "mock9-CRS": "MOCK9-CRS",
+    "mock9-Civic Education": "MOCK9-CIV",
+    "mock9-Agricultural Science": "MOCK9-AGRIC",
+    "mock9-Home Economics": "MOCK9-HOME",
+    "mock9-Yoruba": "MOCK9-YORUBA",
+    "mock9-History": "MOCK9-HIST",
+    // Mock Year 12 passwords (shared across departments)
+    "mock12-Mathematics": "MOCK12-MATH",
+    "mock12-English": "MOCK12-ENG",
+    "mock12-Physics": "MOCK12-PHY",
+    "mock12-Chemistry": "MOCK12-CHEM",
+    "mock12-Biology": "MOCK12-BIO",
+    "mock12-Economics": "MOCK12-ECON",
+    "mock12-Civic Education": "MOCK12-CIV",
+    "mock12-Further Mathematics": "MOCK12-FMATH",
+    "mock12-ICT": "MOCK12-ICT",
+    "mock12-Yoruba": "MOCK12-YORUBA",
+    "mock12-Geography": "MOCK12-GEO",
+    "mock12-Agricultural Science": "MOCK12-AGRIC",
+    "mock12-Literature in English": "MOCK12-LIT",
+    "mock12-Government": "MOCK12-GOV",
+    "mock12-CRS": "MOCK12-CRS",
+    "mock12-Commerce": "MOCK12-COM",
+    "mock12-Marketing": "MOCK12-MKT",
+    "mock12-Financial Accounting": "MOCK12-ACCT"
   };
 
   // Get password key for a subject
@@ -499,6 +545,9 @@ export default function App() {
     if (section === "entrance") {
       // year will contain 'elementary' or 'college' for entrance exams
       return `entrance-${year}-${subject}`;
+    }
+    if (section === "mock6" || section === "mock9" || section === "mock12") {
+      return `${section}-${subject}`;
     }
     if (section === "elementary") {
       return `elementary-${year}-${subject}`;
@@ -569,7 +618,15 @@ export default function App() {
           q.year === selYear &&
           q.subject === subject
         );
-      } else {
+      } 
+      // For Mock exams - filter by section and subject
+      else if (section === "mock6" || section === "mock9" || section === "mock12") {
+        pool = allQs.filter(q => 
+          q.section === section && 
+          q.subject === subject
+        );
+      }
+      else {
         // For entrance exams, map to actual year numbers
         let filterSection = section;
         let filterYear = selYear;
@@ -601,6 +658,8 @@ export default function App() {
       let needed;
       if (section === "vat") {
         needed = pool.length; // Use all available VAT questions
+      } else if (section === "mock6" || section === "mock9" || section === "mock12") {
+        needed = Math.min(pool.length, 100); // Mock exams are 100 questions
       } else if (section === "entrance" && type === "exam") {
         needed = 50;
       } else {
@@ -623,6 +682,8 @@ export default function App() {
       let mins;
       if (section === "vat") {
         mins = Math.ceil(pool.length * 1.5); // 1.5 minutes per question for VAT
+      } else if (section === "mock6" || section === "mock9" || section === "mock12") {
+        mins = 150; // 2.5 hours (150 minutes) for 100-question mock exams
       } else if (section === "entrance" && type === "exam") {
         mins = 60;
       } else if (type === "exam") {
@@ -743,7 +804,7 @@ export default function App() {
       }
     };
 
-    if (view === "admin" || view === "yearSelect" || view === "vat-subjects" || view === "vat-year-subjects") {
+    if (view === "admin" || view === "yearSelect" || view === "vat-subjects" || view === "vat-year-subjects" || view === "mock6-subjects" || view === "mock9-subjects" || view === "mock12-track" || view === "mock12-subjects") {
       loadData();
     }
   }, [view, serverConnected]);
@@ -1068,6 +1129,51 @@ export default function App() {
           <div>
             <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Value Added Test</h3>
             <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>Assessment Tests</p>
+          </div>
+        </HoverCard>
+
+        {/* Year 6 Mock Exam */}
+        <HoverCard onClick={() => { setSection("mock6"); setView("mock6-subjects"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 12, background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 900, color: "#fff" }}>
+            Y6
+          </div>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Year 6 Mock Exam</h3>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>100 questions per subject</p>
+            <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+              {MOCK_YEAR6_SUBJECTS.map(s => <span key={s} style={{ background: "#fce7f3", color: "#9d174d", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>{s}</span>)}
+            </div>
+          </div>
+        </HoverCard>
+
+        {/* Year 9 Mock Exam */}
+        <HoverCard onClick={() => { setSection("mock9"); setView("mock9-subjects"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 12, background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 900, color: "#fff" }}>
+            Y9
+          </div>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Year 9 Mock Exam</h3>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>100 questions per subject</p>
+            <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+              {MOCK_YEAR9_SUBJECTS.slice(0, 4).map(s => <span key={s} style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>{s}</span>)}
+              <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>+{MOCK_YEAR9_SUBJECTS.length - 4} more</span>
+            </div>
+          </div>
+        </HoverCard>
+
+        {/* Year 12 Mock Exam */}
+        <HoverCard onClick={() => { setSection("mock12"); setView("mock12-track"); }} style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 12, background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 900, color: "#fff" }}>
+            Y12
+          </div>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>Year 12 Mock Exam</h3>
+            <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>100 questions per subject • Science, Arts & Commercial</p>
+            <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+              <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>Science</span>
+              <span style={{ background: "#d1fae5", color: "#065f46", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>Commercial</span>
+              <span style={{ background: "#fce7f3", color: "#9d174d", padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 700 }}>Arts</span>
+            </div>
           </div>
         </HoverCard>
 
@@ -1430,6 +1536,241 @@ export default function App() {
                     style={{ ...btnP, width: "100%", justifyContent: "center", padding: "14px", fontSize: 18, fontWeight: 700 }}
                   >
                     Start Test
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // MOCK YEAR 6 - SUBJECTS
+  // ══════════════════════════════════════════════════════
+  if (view === "mock6-subjects") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
+        <Header title="Year 6 Mock Exam" onBack={() => setView("home")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#fff" }}>
+              Y6
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>100 questions per subject</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {MOCK_YEAR6_SUBJECTS.map(subj => {
+              const cnt = bank.filter(q => q.section === "mock6" && q.subject === subj).length;
+              
+              return (
+                <div key={subj} style={cardS({ padding: "20px" })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} Question{cnt !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelSubject(subj);
+                      setSelYear(6);
+                      setSection("mock6");
+                      setPendingTest({ subject: subj, type: "mock" });
+                      setShowPasswordModal(true);
+                      setPasswordError("");
+                    }}
+                    disabled={cnt === 0}
+                    style={{ ...btnP, width: "100%", justifyContent: "center", padding: "14px", fontSize: 18, fontWeight: 700, opacity: cnt === 0 ? 0.5 : 1 }}
+                  >
+                    Start Mock Exam
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // MOCK YEAR 9 - SUBJECTS
+  // ══════════════════════════════════════════════════════
+  if (view === "mock9-subjects") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
+        <Header title="Year 9 Mock Exam" onBack={() => setView("home")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 900, color: "#fff" }}>
+              Y9
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>100 questions per subject</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {MOCK_YEAR9_SUBJECTS.map(subj => {
+              const cnt = bank.filter(q => q.section === "mock9" && q.subject === subj).length;
+              
+              return (
+                <div key={subj} style={cardS({ padding: "20px" })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} Question{cnt !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelSubject(subj);
+                      setSelYear(9);
+                      setSection("mock9");
+                      setPendingTest({ subject: subj, type: "mock" });
+                      setShowPasswordModal(true);
+                      setPasswordError("");
+                    }}
+                    disabled={cnt === 0}
+                    style={{ ...btnP, width: "100%", justifyContent: "center", padding: "14px", fontSize: 18, fontWeight: 700, opacity: cnt === 0 ? 0.5 : 1 }}
+                  >
+                    Start Mock Exam
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // MOCK YEAR 12 - TRACK SELECTION
+  // ══════════════════════════════════════════════════════
+  if (view === "mock12-track") {
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <Header title="Year 12 Mock Exam" onBack={() => setView("home")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#fff" }}>
+              Y12
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>Choose your track</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {["Science", "Arts", "Commercial"].map(track => (
+              <HoverCard 
+                key={track}
+                onClick={() => { 
+                  setSelTrack(track);
+                  setSelYear(12);
+                  setView("mock12-subjects"); 
+                }}
+                style={{ padding: 20 }}
+              >
+                <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{track} Track</h3>
+                <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>
+                  {track === "Science" && "Math • English • Physics • Chemistry • Biology • Economics • Civic Ed • Further Math • ICT • Yoruba • Geography • Agric"}
+                  {track === "Arts" && "Math • English • Economics • Lit-in-Eng • Government • CRS • ICT • Biology • Civic • Yoruba"}
+                  {track === "Commercial" && "Math • English • Commerce • Economics • Marketing • F. Account • ICT • Government • Biology • Geography"}
+                </p>
+              </HoverCard>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════
+  // MOCK YEAR 12 - SUBJECTS
+  // ══════════════════════════════════════════════════════
+  if (view === "mock12-subjects") {
+    const subjects = MOCK_YEAR12_SUBJECTS[selTrack] || [];
+    
+    return (
+      <div style={pageS}>
+        <Toast />
+        <LoadingOverlay />
+        <PasswordModal 
+          isOpen={showPasswordModal}
+          onClose={() => {
+            setShowPasswordModal(false);
+            setPendingTest(null);
+            setPasswordError("");
+          }}
+          onSubmit={handlePasswordSubmit}
+          subjectName={pendingTest?.subject || ""}
+          error={passwordError}
+          C={C}
+        />
+        <Header title={`Year 12 Mock - ${selTrack} Track`} onBack={() => setView("mock12-track")} />
+        <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 50, height: 50, borderRadius: 8, background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#fff" }}>
+              Y12
+            </div>
+            <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>100 questions per subject</p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {subjects.map(subj => {
+              const cnt = bank.filter(q => q.section === "mock12" && q.subject === subj).length;
+              
+              return (
+                <div key={subj} style={cardS({ padding: "20px" })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <div>
+                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} Question{cnt !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelSubject(subj);
+                      setSection("mock12");
+                      setPendingTest({ subject: subj, type: "mock" });
+                      setShowPasswordModal(true);
+                      setPasswordError("");
+                    }}
+                    disabled={cnt === 0}
+                    style={{ ...btnP, width: "100%", justifyContent: "center", padding: "14px", fontSize: 18, fontWeight: 700, opacity: cnt === 0 ? 0.5 : 1 }}
+                  >
+                    Start Mock Exam
                   </button>
                 </div>
               );
