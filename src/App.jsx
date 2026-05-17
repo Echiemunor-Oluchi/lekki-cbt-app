@@ -2590,7 +2590,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Results Tab */}
+          {/* Results Tab, added a coment because why not */}
           {adminTab === "results" && (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
