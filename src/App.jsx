@@ -610,29 +610,46 @@ export default function App() {
     setLoading(true);
     try {
       const allQs = await questionsAPI.getAll();
-      
+
+      // Helper to compare values tolerantly:
+      // - strings are trimmed and case-insensitive
+      // - year is compared as a number when possible
+      const sEq = (a, b) => {
+        if (a === undefined || a === null || b === undefined || b === null) return a === b;
+        if (typeof a === "string" || typeof b === "string") {
+          return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+        }
+        return a === b;
+      };
+      const yEq = (a, b) => {
+        if (a === undefined || a === null || b === undefined || b === null) return a === b;
+        const na = Number(a), nb = Number(b);
+        if (!isNaN(na) && !isNaN(nb)) return na === nb;
+        return String(a) === String(b);
+      };
+
       let pool;
-      
+
       // For VAT section - filter by year and subject
       if (section === "vat") {
-        pool = allQs.filter(q => 
-          q.section === "vat" && 
-          q.year === selYear &&
-          q.subject === subject
+        pool = allQs.filter(q =>
+          sEq(q.section, "vat") &&
+          yEq(q.year, selYear) &&
+          sEq(q.subject, subject)
         );
-      } 
+      }
       // For Mock exams - filter by section and subject
       else if (section === "mock6" || section === "mock9" || section === "mock12") {
-        pool = allQs.filter(q => 
-          q.section === section && 
-          q.subject === subject
+        pool = allQs.filter(q =>
+          sEq(q.section, section) &&
+          sEq(q.subject, subject)
         );
       }
       else {
         // For entrance exams, map to actual year numbers
         let filterSection = section;
         let filterYear = selYear;
-        
+
         if (section === "entrance") {
           if (selYear === "college") {
             filterSection = "college";
@@ -642,12 +659,12 @@ export default function App() {
             filterYear = 6;
           }
         }
-        
-        pool = allQs.filter(q => 
-          q.section === filterSection && 
-          q.year === filterYear && 
-          q.subject === subject && 
-          q.type === type
+
+        pool = allQs.filter(q =>
+          sEq(q.section, filterSection) &&
+          yEq(q.year, filterYear) &&
+          sEq(q.subject, subject) &&
+          sEq(q.type, type)
         );
       }
 
@@ -857,9 +874,22 @@ export default function App() {
     try {
       const arr = JSON.parse(bulkText);
       if (!Array.isArray(arr)) throw new Error("Invalid format");
-      
+
+      // Normalize fields so they match what the student-side filter expects.
+      // Year must be a number; section/type are lowercased; strings are trimmed.
+      const normalized = arr.map(q => ({
+        ...q,
+        section: typeof q.section === "string" ? q.section.trim().toLowerCase() : q.section,
+        year: q.year === undefined || q.year === null || q.year === ""
+          ? q.year
+          : (isNaN(Number(q.year)) ? q.year : Number(q.year)),
+        subject: typeof q.subject === "string" ? q.subject.trim() : q.subject,
+        type: typeof q.type === "string" ? q.type.trim().toLowerCase() : q.type,
+        track: typeof q.track === "string" ? q.track.trim() : (q.track || "")
+      }));
+
       setLoading(true);
-      const uploadedQuestions = await questionsAPI.addBulk(arr);
+      const uploadedQuestions = await questionsAPI.addBulk(normalized);
       setBank(prev => [...uploadedQuestions, ...prev]);
       setBulkText("");
       notify(`${uploadedQuestions.length} questions uploaded successfully!`, "success");
@@ -1337,7 +1367,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {COMMON_ENTRANCE_SUBJECTS.map(subj => {
-              const cnt = isYearLevel ? bank.filter(q => q.section === section && q.year === selYear && q.subject === subj).length : 0;
+              const cnt = isYearLevel ? bank.filter(q => String(q.section).toLowerCase() === String(section).toLowerCase() && Number(q.year) === Number(selYear) && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length : 0;
               
               if (isEntranceExam) {
                 // Entrance exam - clickable card
@@ -1517,7 +1547,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subjects.map(subj => {
-              const cnt = bank.filter(q => q.section === "vat" && q.year === selYear && q.subject === subj).length;
+              const cnt = bank.filter(q => String(q.section).toLowerCase() === "vat" && Number(q.year) === Number(selYear) && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length;
               
               return (
                 <div key={subj} style={cardS({ padding: "20px" })}>
@@ -1579,7 +1609,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {MOCK_YEAR6_SUBJECTS.map(subj => {
-              const cnt = bank.filter(q => q.section === "mock6" && q.subject === subj).length;
+              const cnt = bank.filter(q => String(q.section).toLowerCase() === "mock6" && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length;
               
               return (
                 <div key={subj} style={cardS({ padding: "20px" })}>
@@ -1643,7 +1673,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {MOCK_YEAR9_SUBJECTS.map(subj => {
-              const cnt = bank.filter(q => q.section === "mock9" && q.subject === subj).length;
+              const cnt = bank.filter(q => String(q.section).toLowerCase() === "mock9" && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length;
               
               return (
                 <div key={subj} style={cardS({ padding: "20px" })}>
@@ -1751,7 +1781,7 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subjects.map(subj => {
-              const cnt = bank.filter(q => q.section === "mock12" && q.subject === subj).length;
+              const cnt = bank.filter(q => String(q.section).toLowerCase() === "mock12" && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length;
               
               return (
                 <div key={subj} style={cardS({ padding: "20px" })}>
@@ -1901,7 +1931,7 @@ export default function App() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {subs.map(sub => {
-              const cnt = bank.filter(q => q.section === section && q.year === selYear && q.subject === sub).length;
+              const cnt = bank.filter(q => String(q.section).toLowerCase() === String(section).toLowerCase() && Number(q.year) === Number(selYear) && String(q.subject).trim().toLowerCase() === String(sub).trim().toLowerCase()).length;
               
               return (
                 <div key={sub} style={cardS({ padding: "20px" })}>
@@ -2739,7 +2769,7 @@ function LoginForm({ isAdmin, section, onLogin, C, inputS, btnP }) {
     if (section === "elementary" && pass === "science2024") {
       onLogin(name.trim(), name.trim(), "student");
     }
-    // College student password
+    // This is for the College student password
     else if (section === "college" && pass === "startup2024") {
       onLogin(name.trim(), name.trim(), "student");
     }
