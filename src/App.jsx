@@ -50,7 +50,7 @@ const MOCK_YEAR12_SUBJECTS = {
   Commercial: ["Mathematics", "English", "Commerce", "Economics", "Marketing", "Financial Accounting", "ICT", "Government", "Biology", "Geography"]
 };
 
-const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 50, mock: 100 };
+const QUESTION_COUNTS = { test: 20, exam: 40, practice: 10, entrance: 40, mock: 100 };
 
 function generateSampleQuestions(subject, count = 10) {
   const templates = [
@@ -491,14 +491,44 @@ export default function App() {
     "college-12-Arts-Civic Education": "Z5T9",
     "college-12-Arts-Marketing": "2MKPL",
     "college-12-Arts-Economics": "F2H4",
-    // Common Entrance passwords - Elementary
-    "entrance-elementary-Mathematics": "CEELEM-MATH",
-    "entrance-elementary-English": "CEELEM-ENG",
-    "entrance-elementary-General Knowledge": "CEELEM-GK",
-    // Common Entrance passwords - College
-    "entrance-college-Mathematics": "CECOLL-MATH",
-    "entrance-college-English": "CECOLL-ENG",
-    "entrance-college-General Knowledge": "CECOLL-GK",
+    // Common Entrance passwords - Elementary (Year 1-6)
+    "entrance-1-Mathematics": "DSS5D",
+    "entrance-1-English": "HVT3T",
+    "entrance-1-General Knowledge": "Z22UH",
+    "entrance-2-Mathematics": "VD4Q4",
+    "entrance-2-English": "XXGJ9",
+    "entrance-2-General Knowledge": "739SC",
+    "entrance-3-Mathematics": "LTKQ6",
+    "entrance-3-English": "YUAYM",
+    "entrance-3-General Knowledge": "PNURD",
+    "entrance-4-Mathematics": "S2VR7",
+    "entrance-4-English": "JP7RS",
+    "entrance-4-General Knowledge": "AHEBY",
+    "entrance-5-Mathematics": "6DVRR",
+    "entrance-5-English": "H6WQR",
+    "entrance-5-General Knowledge": "79TTX",
+    "entrance-6-Mathematics": "K3SR6",
+    "entrance-6-English": "PKJBW",
+    "entrance-6-General Knowledge": "VQSR7",
+    // Common Entrance passwords - College (Year 7-12)
+    "entrance-7-Mathematics": "JRS43",
+    "entrance-7-English": "T74L7",
+    "entrance-7-General Knowledge": "DY3SQ",
+    "entrance-8-Mathematics": "884RC",
+    "entrance-8-English": "JRDZP",
+    "entrance-8-General Knowledge": "QAAU7",
+    "entrance-9-Mathematics": "C3HV2",
+    "entrance-9-English": "8XWEL",
+    "entrance-9-General Knowledge": "U28RZ",
+    "entrance-10-Mathematics": "EHU86",
+    "entrance-10-English": "SCX73",
+    "entrance-10-General Knowledge": "7KP3S",
+    "entrance-11-Mathematics": "GAD6B",
+    "entrance-11-English": "MM2AS",
+    "entrance-11-General Knowledge": "LKLD8",
+    "entrance-12-Mathematics": "U3ESP",
+    "entrance-12-English": "LVXCN",
+    "entrance-12-General Knowledge": "G7BT4",
     // VAT passwords - Elementary
     "vat-Mathematics": "VAT-MATH",
     "vat-English Language": "VAT-ENG",
@@ -665,24 +695,18 @@ export default function App() {
           sEq(q.subject, subject)
         );
       }
-      else {
-        // For entrance exams, map to actual year numbers
-        let filterSection = section;
-        let filterYear = selYear;
-
-        if (section === "entrance") {
-          if (selYear === "college") {
-            filterSection = "college";
-            filterYear = 12;
-          } else if (selYear === "elementary") {
-            filterSection = "elementary";
-            filterYear = 6;
-          }
-        }
-
+      // For Common Entrance - filter by section, year and subject (no type filter)
+      else if (section === "entrance") {
         pool = allQs.filter(q =>
-          sEq(q.section, filterSection) &&
-          yEq(q.year, filterYear) &&
+          sEq(q.section, "entrance") &&
+          yEq(q.year, selYear) &&
+          sEq(q.subject, subject)
+        );
+      }
+      else {
+        pool = allQs.filter(q =>
+          sEq(q.section, section) &&
+          yEq(q.year, selYear) &&
           sEq(q.subject, subject) &&
           sEq(q.type, type)
         );
@@ -699,8 +723,8 @@ export default function App() {
         needed = pool.length; // Use all available VAT questions
       } else if (section === "mock6" || section === "mock9" || section === "mock12") {
         needed = Math.min(pool.length, 100); // Mock exams are 100 questions
-      } else if (section === "entrance" && type === "exam") {
-        needed = 50;
+      } else if (section === "entrance") {
+        needed = 40;
       } else {
         needed = QUESTION_COUNTS[type];
       }
@@ -723,8 +747,8 @@ export default function App() {
         mins = Math.ceil(pool.length * 1.5); // 1.5 minutes per question for VAT
       } else if (section === "mock6" || section === "mock9" || section === "mock12") {
         mins = 150; // 2.5 hours (150 minutes) for 100-question mock exams
-      } else if (section === "entrance" && type === "exam") {
-        mins = 60;
+      } else if (section === "entrance") {
+        mins = 50;
       } else if (type === "exam") {
         mins = 50;
       } else if (type === "test") {
@@ -1011,10 +1035,8 @@ export default function App() {
   const getFilteredResults = () => {
     return results.filter(r => {
       if (filterSection && r.section !== filterSection) return false;
-      // For entrance, year contains "elementary" or "college"
-      if (filterSection === "entrance" && filterYear && r.year !== filterYear) return false;
-      // For regular sections, year is a number
-      if (filterSection !== "entrance" && filterYear && r.year !== parseInt(filterYear)) return false;
+      // Year is always a number now (1-12 for all sections, including entrance)
+      if (filterYear && Number(r.year) !== Number(filterYear)) return false;
       if (filterSubject && r.subject !== filterSubject) return false;
       return true;
     });
@@ -1280,18 +1302,21 @@ export default function App() {
 
           <div style={{ ...cardS({ marginBottom: 20, background: C.yellowLight, borderColor: C.yellow }) }}>
             <p style={{ margin: 0, color: "#8a7200", fontSize: 16, fontWeight: 600 }}>
-              Each exam has <strong>40 questions</strong> and <strong>50 minutes</strong> to complete
+              Each subject has <strong>40 questions</strong> and <strong>50 minutes</strong> to complete
             </p>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Year 1-6 Elementary */}
+          {/* Elementary Section Heading */}
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: C.navy, margin: "8px 0 12px" }}>Elementary (Year 1 - Year 6)</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 24 }}>
             {[1, 2, 3, 4, 5, 6].map(year => (
               <HoverCard 
                 key={`year-${year}`}
                 onClick={() => { 
-                  setSection("elementary");
+                  setSection("entrance");
                   setSelYear(year);
+                  setSelTrack(null);
+                  setSelSubject("");
                   setView("entrance-subjects"); 
                 }}
                 style={{ display: "flex", alignItems: "center", gap: 20, padding: 20 }}
@@ -1305,15 +1330,19 @@ export default function App() {
                 </div>
               </HoverCard>
             ))}
+          </div>
 
-            {/* Year 7-11 College */}
-            {[7, 8, 9, 10, 11].map(year => (
+          {/* College Section Heading */}
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: C.navy, margin: "8px 0 12px" }}>College (Year 7 - Year 12)</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[7, 8, 9, 10, 11, 12].map(year => (
               <HoverCard 
                 key={`year-${year}`}
                 onClick={() => { 
-                  setSection("college");
+                  setSection("entrance");
                   setSelYear(year);
-                  setSelTrack(year >= 10 ? null : "");
+                  setSelTrack(null);
+                  setSelSubject("");
                   setView("entrance-subjects"); 
                 }}
                 style={{ display: "flex", alignItems: "center", gap: 20, padding: 20 }}
@@ -1337,25 +1366,10 @@ export default function App() {
   // ENTRANCE SUBJECTS SELECT
   // ══════════════════════════════════════════════════════
   if (view === "entrance-subjects") {
-    // Check if this is an entrance exam or a year level
-    const isEntranceExam = selYear === "elementary" || selYear === "college";
-    const isYearLevel = typeof selYear === "number";
-    
-    let titleText = "";
-    let infoText = "";
-    let questionInfo = "";
-    
-    if (isEntranceExam) {
-      const armName = selYear === "elementary" ? "Elementary" : "College";
-      titleText = `Common Entrance - ${armName}`;
-      infoText = "Select a subject to begin your entrance exam";
-      questionInfo = "Each subject has 50 questions and 60 minutes (1 hour) to complete";
-    } else if (isYearLevel) {
-      titleText = `Year ${selYear}`;
-      infoText = "Select a subject";
-      questionInfo = "Each exam has 40 questions and 50 minutes to complete";
-    }
-    
+    const titleText = `Common Entrance - Year ${selYear}`;
+    const infoText = "Select a subject to begin your entrance exam";
+    const questionInfo = "Each subject has 40 questions and 50 minutes to complete";
+
     return (
       <div style={pageS}>
         <Toast />
@@ -1375,7 +1389,7 @@ export default function App() {
         <Header title={titleText} onBack={() => setView("entrance-arm")} />
         <div style={{ maxWidth: 580, margin: "0 auto", padding: "18px 20px 50px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-            <Logo type={isYearLevel && selYear <= 6 ? "elementary" : isYearLevel ? "college" : selYear} size={50} />
+            <Logo type={Number(selYear) <= 6 ? "elementary" : "college"} size={50} />
             <p style={{ color: C.textSec, fontSize: 18, margin: 0 }}>{infoText}</p>
           </div>
 
@@ -1387,54 +1401,33 @@ export default function App() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {COMMON_ENTRANCE_SUBJECTS.map(subj => {
-              const cnt = isYearLevel ? bank.filter(q => String(q.section).toLowerCase() === String(section).toLowerCase() && Number(q.year) === Number(selYear) && String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()).length : 0;
-              
-              if (isEntranceExam) {
-                // Entrance exam - clickable card
-                return (
-                  <HoverCard 
-                    key={subj}
-                    onClick={() => {
-                      setSelSubject(subj);
-                      setSelTrack(null);
-                      setSection("entrance");
-                      setPendingTest({ subject: subj, type: "exam" });
-                      setShowPasswordModal(true);
-                      setPasswordError("");
-                    }}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
-                  >
-                    <div>
-                      <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
-                      <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>50 Questions • 60 Minutes • Password Required</p>
-                    </div>
-                    <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
-                  </HoverCard>
-                );
-              } else {
-                // Year level - show buttons
-                return (
-                  <div key={subj} style={cardS({ padding: "20px" })}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                      <div>
-                        <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
-                        <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>{cnt} question{cnt !== 1 ? "s" : ""} in bank</p>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <button onClick={() => { setSelSubject(subj); startExam(subj, "test"); }} disabled={loading} style={{ ...btnP, padding: "12px 20px", fontSize: 16 }}>
-                        Test (20Q)
-                      </button>
-                      <button onClick={() => { setSelSubject(subj); startExam(subj, "exam"); }} disabled={loading} style={{ ...btnSec, padding: "12px 20px", fontSize: 16 }}>
-                        Exam (40Q)
-                      </button>
-                      <button onClick={() => { setSelSubject(subj); startExam(subj, "practice"); }} disabled={loading} style={{ ...btnOut, padding: "12px 20px", fontSize: 16 }}>
-                        🎯 Practice
-                      </button>
-                    </div>
+              const cnt = bank.filter(q =>
+                String(q.section).toLowerCase() === "entrance" &&
+                Number(q.year) === Number(selYear) &&
+                String(q.subject).trim().toLowerCase() === String(subj).trim().toLowerCase()
+              ).length;
+
+              return (
+                <HoverCard
+                  key={subj}
+                  onClick={() => {
+                    setSelSubject(subj);
+                    setSelTrack(null);
+                    setSection("entrance");
+                    setPendingTest({ subject: subj, type: "exam" });
+                    setShowPasswordModal(true);
+                    setPasswordError("");
+                  }}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 20 }}
+                >
+                  <div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 22, fontWeight: 800, color: C.navy }}>{subj}</h3>
+                    <p style={{ margin: 0, color: C.textSec, fontSize: 16 }}>40 Questions • 50 Minutes • Password Required</p>
+                    <p style={{ margin: "4px 0 0", color: C.textSec, fontSize: 14 }}>{cnt} question{cnt !== 1 ? "s" : ""} in bank</p>
                   </div>
-                );
-              }
+                  <div style={{ fontSize: 32, fontWeight: 700, color: C.navy }}>▶</div>
+                </HoverCard>
+              );
             })}
           </div>
         </div>
@@ -2261,41 +2254,51 @@ export default function App() {
                 <h4 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: C.navy }}>
                   Common Entrance
                 </h4>
-                
-                {/* Elementary Arm */}
-                <div style={{ marginBottom: 20 }}>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>Elementary Arm</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                    {COMMON_ENTRANCE_SUBJECTS.map(subject => {
-                      const key = getPasswordKey("entrance", "elementary", subject);
-                      return (
-                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
-                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
-                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
-                            {testPasswords[key] || "—"}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+                {/* Elementary Arm - Year 1 to 6 */}
+                <div style={{ marginBottom: 24 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 12 }}>Elementary Arm (Year 1 - Year 6)</p>
+                  {[1, 2, 3, 4, 5, 6].map(yr => (
+                    <div key={`entrance-elem-${yr}`} style={{ marginBottom: 14 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 8 }}>Year {yr}</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                        {COMMON_ENTRANCE_SUBJECTS.map(subject => {
+                          const key = getPasswordKey("entrance", yr, subject);
+                          return (
+                            <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                              <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                                {testPasswords[key] || "—"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* College Arm */}
+                {/* College Arm - Year 7 to 12 */}
                 <div>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 10 }}>College Arm</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
-                    {COMMON_ENTRANCE_SUBJECTS.map(subject => {
-                      const key = getPasswordKey("entrance", "college", subject);
-                      return (
-                        <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
-                          <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
-                          <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
-                            {testPasswords[key] || "—"}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: C.textSec, marginBottom: 12 }}>College Arm (Year 7 - Year 12)</p>
+                  {[7, 8, 9, 10, 11, 12].map(yr => (
+                    <div key={`entrance-coll-${yr}`} style={{ marginBottom: 14 }}>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 8 }}>Year {yr}</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+                        {COMMON_ENTRANCE_SUBJECTS.map(subject => {
+                          const key = getPasswordKey("entrance", yr, subject);
+                          return (
+                            <div key={key} style={{ background: C.bg, padding: 10, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: C.navy }}>{subject}</p>
+                              <p style={{ fontSize: 18, fontWeight: 800, color: C.green, margin: 0, fontFamily: "monospace" }}>
+                                {testPasswords[key] || "—"}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -2477,7 +2480,7 @@ export default function App() {
                   <div>
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
                     <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
-                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : newQ.section === "entrance" ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2497,7 +2500,7 @@ export default function App() {
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Subject</label>
                     <select value={newQ.subject} onChange={e => setNewQ({ ...newQ, subject: e.target.value })} style={inputS}>
                       <option value="">Select Subject</option>
-                      {(newQ.section === "elementary" ? (ELEMENTARY_SUBJECTS[newQ.year] || []) : newQ.year >= 10 && newQ.track ? (SENIOR_SUBJECTS[newQ.track] || []) : JUNIOR_SUBJECTS).map(s => <option key={s} value={s}>{s}</option>)}
+                      {(newQ.section === "entrance" ? COMMON_ENTRANCE_SUBJECTS : newQ.section === "elementary" ? (ELEMENTARY_SUBJECTS[newQ.year] || []) : newQ.year >= 10 && newQ.track ? (SENIOR_SUBJECTS[newQ.track] || []) : JUNIOR_SUBJECTS).map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div>
@@ -2526,7 +2529,13 @@ export default function App() {
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16, color: C.navy }}>Bulk Upload (JSON)</h3>
               <div style={cardS({ marginBottom: 24 })}>
                 <p style={{ color: C.textSec, fontSize: 16, marginBottom: 10 }}>Paste JSON array of questions:</p>
-                <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} style={{ ...inputS, minHeight: 200, fontFamily: "monospace", fontSize: 14 }} placeholder='[{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"section":"elementary","year":1,"subject":"Mathematics","type":"test"}]' />
+                <p style={{ color: C.textSec, fontSize: 14, marginBottom: 6 }}>
+                  <strong style={{ color: C.navy }}>Required fields:</strong> question, options (array of 4), correctAnswer (0-3), section, year, subject, type
+                </p>
+                <p style={{ color: C.textSec, fontSize: 14, marginBottom: 10 }}>
+                  <strong style={{ color: C.navy }}>For Common Entrance:</strong> section="entrance", year=1-12, subject="Mathematics"/"English"/"General Knowledge", type="exam"
+                </p>
+                <textarea value={bulkText} onChange={e => setBulkText(e.target.value)} style={{ ...inputS, minHeight: 200, fontFamily: "monospace", fontSize: 14 }} placeholder='[{"question":"...","options":["A","B","C","D"],"correctAnswer":0,"section":"entrance","year":1,"subject":"Mathematics","type":"exam"}]' />
                 <button onClick={bulkUpload} disabled={loading} style={{ ...btnP, width: "100%", justifyContent: "center", marginTop: 10 }}>Upload JSON</button>
               </div>
 
@@ -2546,7 +2555,7 @@ export default function App() {
                   <div>
                     <label style={{ fontSize: 14, fontWeight: 700, color: C.textSec, display: "block", marginBottom: 6 }}>Year</label>
                     <select value={newQ.year} onChange={e => setNewQ({ ...newQ, year: parseInt(e.target.value), track: "" })} style={inputS}>
-                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
+                      {(newQ.section === "elementary" ? ELEMENTARY_YEARS : newQ.section === "vat" ? [7, 8, 9, 10, 11, 12] : newQ.section === "entrance" ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS]).map(y => <option key={y} value={y}>Year {y}</option>)}
                     </select>
                   </div>
                 </div>
@@ -2678,12 +2687,7 @@ export default function App() {
                       <option value="">All Years</option>
                       {filterSection === "elementary" && ELEMENTARY_YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
                       {filterSection === "college" && [...JUNIOR_COLLEGE_YEARS, ...SENIOR_COLLEGE_YEARS].map(y => <option key={y} value={y}>Year {y}</option>)}
-                      {filterSection === "entrance" && (
-                        <>
-                          <option value="elementary">Elementary</option>
-                          <option value="college">College</option>
-                        </>
-                      )}
+                      {filterSection === "entrance" && [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(y => <option key={y} value={y}>Year {y}</option>)}
                     </select>
                   </div>
                   <div>
